@@ -1,4 +1,191 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Mail, Lock } from "lucide-react";
+
+function LoginModal({ onClose }) {
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    console.log("Welcome");
+    onClose();
+  };
+
+  const inputClass =
+    "w-full rounded-xl pl-11 pr-4 py-3.5 text-white text-sm outline-none transition-all duration-200 placeholder-white/20 border border-white/8"
+    + " " + "focus:border-[var(--coral)] focus:ring-2 focus:ring-[var(--coral)]/20";
+
+  const inputStyle = {
+    background: "rgba(0,0,0,0.45)",
+    fontFamily: "var(--font-b)",
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        onClick={onClose}
+      >
+        {/* Backdrop */}
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+
+        {/* Modal */}
+        <motion.div
+          className="relative w-full max-w-sm border overflow-hidden"
+          style={{
+            background: "rgba(255,255,255,.08)",
+            backdropFilter: "blur(24px)",
+            border: "1px solid rgba(255,255,255,.1)",
+            borderRadius: 20,
+          }}
+          initial={{ opacity: 0, scale: 0.95, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 12 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Coral accent bar */}
+          <div style={{ height: 3, background: "linear-gradient(90deg, var(--coral), var(--gold))" }} />
+
+          <div className="p-8">
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-white/25 hover:text-white/70 transition-colors"
+          >
+            <X size={18} />
+          </button>
+
+          {/* Header */}
+          <div className="mb-7">
+            {/* Logo */}
+            <div
+              className="mb-4"
+              style={{
+                fontFamily: "var(--font-d)",
+                fontSize: 26,
+                fontWeight: 800,
+                color: "#fff",
+                letterSpacing: "-1px",
+              }}
+            >
+              pair<span style={{ color: "var(--coral)" }}>go</span>
+            </div>
+            <h2
+              className="text-white font-bold leading-tight"
+              style={{ fontFamily: "var(--font-d)", fontSize: 22, letterSpacing: "-0.4px" }}
+            >
+              Welcome back
+            </h2>
+            <p
+              className="mt-1 text-sm"
+              style={{ color: "rgba(255,255,255,0.38)", fontFamily: "var(--font-b)" }}
+            >
+              Sign in to your account
+            </p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            {/* Email */}
+            <div className="relative">
+              <Mail
+                size={15}
+                className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"
+                style={{ color: "rgba(255,255,255,0.28)" }}
+              />
+              <input
+                type="email"
+                placeholder="Email address"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                required
+                className={inputClass}
+                style={inputStyle}
+              />
+            </div>
+
+            {/* Password */}
+            <div className="relative">
+              <Lock
+                size={15}
+                className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"
+                style={{ color: "rgba(255,255,255,0.28)" }}
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                required
+                className={inputClass}
+                style={inputStyle}
+              />
+            </div>
+
+            {/* Forgot password */}
+            <div className="text-right -mt-1">
+              <a
+                href="#"
+                className="text-xs transition-colors duration-200"
+                style={{ color: "rgba(255,255,255,0.3)", fontFamily: "var(--font-b)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--coral)")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
+              >
+                Forgot your password?
+              </a>
+            </div>
+
+            {/* Submit — matches nav-cta */}
+            <button
+              type="submit"
+              className="w-full mt-1 text-white font-semibold transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
+              style={{
+                background: "var(--coral)",
+                padding: "13px 26px",
+                borderRadius: "100px",
+                fontFamily: "var(--font-b)",
+                fontSize: "15px",
+                fontWeight: 600,
+                letterSpacing: 0,
+                border: "none",
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--coral-deep)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--coral)")}
+            >
+              Log In
+            </button>
+          </form>
+
+          {/* Footer */}
+          <p
+            className="text-center text-xs mt-6"
+            style={{ color: "rgba(255,255,255,0.28)", fontFamily: "var(--font-b)" }}
+          >
+            Don't have an account?{" "}
+            <a
+              href="#cta"
+              onClick={onClose}
+              className="transition-colors duration-200"
+              style={{ color: "rgba(255,255,255,0.28)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--coral)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.28)")}
+            >
+              Create an account
+            </a>
+          </p>
+          </div>{/* end p-8 */}
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
 
 // Unsplash photos for different work categories
 const WORK_PHOTOS = [
@@ -28,6 +215,7 @@ const CITY_IMAGES = [
 ];
 
 export default function PairgoLanding() {
+  const [loginOpen, setLoginOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [heroIdx, setHeroIdx] = useState(0);
@@ -306,9 +494,19 @@ export default function PairgoLanding() {
           <a href="#how">How it works</a>
           <a href="#cities">Cities</a>
           <a href="#benefits">Benefits</a>
+          <button
+            onClick={() => setLoginOpen(true)}
+            className="flex items-center gap-1.5 text-white/55 hover:text-white transition-colors text-sm font-medium bg-transparent border-none cursor-pointer"
+            style={{ fontFamily: "var(--font-b)", letterSpacing: "-.2px" }}
+          >
+            Log In
+          </button>
           <a href="#cta" className="nav-cta">Early Access</a>
         </div>
       </nav>
+
+      {/* LOGIN MODAL */}
+      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
 
       {/* HERO */}
       <section className="hero" onMouseMove={handleMouseMove}
