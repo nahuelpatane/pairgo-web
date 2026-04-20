@@ -530,10 +530,24 @@ export default function PairgoLanding() {
             <p className={`hero-sub fu d2 ${isV("hero") ? "v" : ""}`}>
               Find someone in another city doing your same role. Swap positions. Travel with a guaranteed job from day one.
             </p>
-            <form className={`hero-form fu d3 ${isV("hero") ? "v" : ""}`} onSubmit={handleSubmit}>
-              <input className="hero-input" type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              <button className="hero-btn" type="submit">Get Early Access</button>
-            </form>
+            {!submitted ? (
+              <form className={`hero-form fu d3 ${isV("hero") ? "v" : ""}`} onSubmit={handleSubmit}>
+                <input className="hero-input" type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                <button className="hero-btn" type="submit">Get Early Access</button>
+              </form>
+            ) : (
+              <div className={`fu d3 ${isV("hero") ? "v" : ""}`} style={{
+                background: "rgba(232,101,74,.12)",
+                border: "1px solid rgba(232,101,74,.25)",
+                borderRadius: 14,
+                padding: "18px 24px",
+                maxWidth: 440,
+                fontFamily: "var(--font-b)",
+              }}>
+                <div style={{ fontSize: 20, marginBottom: 6 }}>🎉 You're on the list!</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,.55)" }}>We'll notify you as soon as Pairgo launches.</div>
+              </div>
+            )}
             <div className={`hero-proof fu d4 ${isV("hero") ? "v" : ""}`}>
               <div className="hero-avatars">
                 {["👩‍🍳","👨‍🌾","☕","🏄","👨‍💼"].map((e,i) => (
