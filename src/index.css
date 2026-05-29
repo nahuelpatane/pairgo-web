@@ -1,1 +1,37 @@
 @import "tailwindcss";
+
+:root {
+  --ink: #1A1A18;
+  --ink-soft: #4A4A45;
+  --ink-muted: #8A8A82;
+  --sand: #FAFAF7;
+  --sand-dark: #F0EFE9;
+  --coral: #E8654A;
+  --coral-deep: #D4503A;
+  --coral-glow: #FFE8E2;
+  --ocean: #2563EB;
+  --ocean-soft: #EFF6FF;
+  --forest: #1B7A5A;
+  --forest-soft: #ECFDF5;
+  --gold: #E5A100;
+  --gold-soft: #FFF8E1;
+  --font-d: 'Fraunces', serif;
+  --font-b: 'DM Sans', sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-b);
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes spin    { to { transform: rotate(360deg); } }
+@keyframes float   { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes pulse   { 0% { transform: scale(1); opacity: .4; } 100% { transform: scale(2); opacity: 0; } }
+@keyframes hero-zoom { 0% { transform: scale(1); } 100% { transform: scale(1.08); } }
+@keyframes ticker  { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
