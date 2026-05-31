@@ -7,7 +7,18 @@
       "PowerShell(npm run *)",
       "PowerShell(npx vite --port 5173)",
       "PowerShell(npm install *)",
-      "WebFetch(domain:localhost)"
+      "WebFetch(domain:localhost)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(npx playwright@latest chromium-cli screenshot --url \"http://localhost:5173\" --output \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\landing.png\")",
+      "Bash(node -e ' *)",
+      "Bash(npm list *)",
+      "WebFetch(domain:flatmates.com.au)",
+      "WebFetch(domain:web.archive.org)",
+      "Bash(npm install *)",
+      "Bash(node server.js)",
+      "Bash(curl -s -X POST http://localhost:3001/api/auth/signup -H \"Content-Type: application/json\" -d \"{\\\\\"email\\\\\":\\\\\"backpacker@test.com\\\\\",\\\\\"password\\\\\":\\\\\"test123\\\\\",\\\\\"name\\\\\":\\\\\"Alex Backpacker\\\\\",\\\\\"role\\\\\":\\\\\"backpacker\\\\\",\\\\\"currentCity\\\\\":\\\\\"Sydney\\\\\",\\\\\"targetCity\\\\\":\\\\\"Melbourne\\\\\",\\\\\"currentRole\\\\\":\\\\\"Barista\\\\\"}\")",
+      "Bash(python -m json.tool)",
+      "Bash(curl *)"
     ]
   }
 }

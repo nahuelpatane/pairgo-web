@@ -59,8 +59,7 @@ export default function LoginModal({ onClose, onSuccess, onSwitchToSignup }) {
     e.preventDefault();
     setError("");
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 600));
-    const result = login(email, password);
+    const result = await login(email, password);
     setLoading(false);
     if (result.success) { onClose(); onSuccess(); }
     else setError(result.error);

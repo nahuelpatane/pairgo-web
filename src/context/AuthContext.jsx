@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from "react";
+import { api } from "../api";
 
 const AuthContext = createContext(null);
 
@@ -8,29 +9,32 @@ export function AuthProvider({ children }) {
     catch { return null; }
   });
 
-  const login = (email, password) => {
+  const persist = (u) => {
+    try { localStorage.setItem("pairgo_user", JSON.stringify(u)); } catch {}
+    setUser(u);
+  };
+
+  const login = async (email, password) => {
     if (!email || !password || password.length < 4) {
       return { success: false, error: "Ingresá un email válido y contraseña (mín. 4 caracteres)." };
     }
-    let profile = null;
-    try { profile = JSON.parse(localStorage.getItem(`pairgo_profile_${email}`)); } catch {}
-    // Demo fallback: any valid credentials work as backpacker
-    if (!profile) {
-      profile = { id: `u_${Date.now()}`, email, name: email.split("@")[0], role: "backpacker" };
+    try {
+      const { user } = await api.login(email, password);
+      persist(user);
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
     }
-    try { localStorage.setItem("pairgo_user", JSON.stringify(profile)); } catch {}
-    setUser(profile);
-    return { success: true };
   };
 
-  const signup = (data) => {
-    const profile = { id: `u_${Date.now()}`, ...data };
+  const signup = async (data) => {
     try {
-      localStorage.setItem(`pairgo_profile_${data.email}`, JSON.stringify(profile));
-      localStorage.setItem("pairgo_user", JSON.stringify(profile));
-    } catch {}
-    setUser(profile);
-    return { success: true };
+      const { user } = await api.signup(data);
+      persist(user);
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
   };
 
   const logout = () => {

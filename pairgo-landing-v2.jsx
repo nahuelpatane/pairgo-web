@@ -323,9 +323,6 @@ export default function PairgoLanding() {
 
         <div className="hero-content">
           <div className="hero-left">
-            <div className={`fu ${isV("hero") ? "v" : ""}`}>
-              <div className="hero-badge"><div className="bdot" />Launching in Australia — 2026</div>
-            </div>
             <h1 className={`hero-title fu d1 ${isV("hero") ? "v" : ""}`}>
               Swap your job.<br /><em>Keep moving.</em>
             </h1>

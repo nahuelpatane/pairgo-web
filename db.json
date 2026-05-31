@@ -1,0 +1,86 @@
+{
+  "users": [
+    {
+      "id": "u_1780185955035",
+      "email": "nahupatane@gmail.com",
+      "password": "asdasd",
+      "initials": "NP",
+      "avatarColor": "#fbbf24",
+      "name": "Nahuel Patane",
+      "currentCity": "Cairns",
+      "currentRole": "Kitchen Hand",
+      "targetCity": "Gold Coast",
+      "venueName": "",
+      "city": "",
+      "venueType": "",
+      "roleNeeded": "",
+      "role": "backpacker"
+    },
+    {
+      "id": "u_1780186010761",
+      "email": "nil@gmail.com",
+      "password": "asdasd",
+      "initials": "N",
+      "avatarColor": "#60a5fa",
+      "name": "Nil",
+      "currentCity": "",
+      "currentRole": "",
+      "targetCity": "",
+      "venueName": "Picnic Bay Hotel",
+      "city": "Gold Coast",
+      "venueType": "Restaurant",
+      "roleNeeded": "Kitchen Hand",
+      "role": "manager"
+    }
+  ],
+  "positions": [
+    {
+      "id": "pos_1780186047348",
+      "createdAt": 1780186047348,
+      "status": "open",
+      "managerId": "u_1780186010761",
+      "venueName": "Picnic Bay Hotel",
+      "city": "Gold Coast",
+      "venueType": "Restaurant",
+      "role": "Kitchen Hand",
+      "startDate": "2026-06-03",
+      "duration": "Flexible",
+      "description": "Looking for a kitchen hand...\n",
+      "compensation": "paid"
+    }
+  ],
+  "requests": [
+    {
+      "id": "req_1780186073995",
+      "createdAt": 1780186073995,
+      "status": "active",
+      "rating": null,
+      "managerId": "u_1780186010761",
+      "backpackerId": "u_1780185955035",
+      "backpackerName": "Nahuel Patane",
+      "backpackerEmail": "nahupatane@gmail.com",
+      "backpackerFlag": "",
+      "backpackerInitials": "NP",
+      "backpackerAvatarColor": "#fbbf24",
+      "positionId": "pos_1780186047348",
+      "positionRole": "Kitchen Hand",
+      "initiator": "manager"
+    },
+    {
+      "id": "req_1780186059655",
+      "createdAt": 1780186059655,
+      "status": "declined",
+      "rating": null,
+      "managerId": "u_1780186010761",
+      "backpackerId": "bp_002",
+      "backpackerName": "Luca Rossi",
+      "backpackerEmail": "",
+      "backpackerFlag": "🇮🇹",
+      "backpackerInitials": "LR",
+      "backpackerAvatarColor": "#60a5fa",
+      "positionId": "pos_1780186047348",
+      "positionRole": "Kitchen Hand",
+      "initiator": "manager"
+    }
+  ]
+}

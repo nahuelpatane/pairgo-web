@@ -109,8 +109,7 @@ export default function SignupModal({ onClose, onSuccess, onSwitchToLogin }) {
     if (!form.email.trim()) { setError("Ingresá tu email."); return; }
     if (form.password.length < 4) { setError("La contraseña debe tener al menos 4 caracteres."); return; }
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 700));
-    const result = signup({ ...form, role: selectedRole });
+    const result = await signup({ ...form, role: selectedRole });
     setLoading(false);
     if (result.success) { setStep(3); }
   };
