@@ -18,7 +18,11 @@
       "Bash(node server.js)",
       "Bash(curl -s -X POST http://localhost:3001/api/auth/signup -H \"Content-Type: application/json\" -d \"{\\\\\"email\\\\\":\\\\\"backpacker@test.com\\\\\",\\\\\"password\\\\\":\\\\\"test123\\\\\",\\\\\"name\\\\\":\\\\\"Alex Backpacker\\\\\",\\\\\"role\\\\\":\\\\\"backpacker\\\\\",\\\\\"currentCity\\\\\":\\\\\"Sydney\\\\\",\\\\\"targetCity\\\\\":\\\\\"Melbourne\\\\\",\\\\\"currentRole\\\\\":\\\\\"Barista\\\\\"}\")",
       "Bash(python -m json.tool)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "PowerShell(python --version 2>&1; python3 --version 2>&1)",
+      "WebSearch",
+      "WebFetch(domain:unsplash.com)",
+      "Bash(git add *)"
     ]
   }
 }
