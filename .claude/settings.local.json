@@ -22,7 +22,12 @@
       "PowerShell(python --version 2>&1; python3 --version 2>&1)",
       "WebSearch",
       "WebFetch(domain:unsplash.com)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\USER\\\\Desktop\\\\pairgo-web\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(node -e \"const p=require\\('./node_modules/@react-google-maps/api/package.json'\\); console.log\\(p.version\\)\")"
     ]
   }
 }

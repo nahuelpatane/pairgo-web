@@ -1,7 +1,13 @@
 import { createContext, useContext, useState } from "react";
 import { api } from "../api";
 
-const AuthContext = createContext(null);
+const AuthContext = createContext({
+  user: null,
+  login: async () => ({ success: false, error: "No auth provider" }),
+  signup: async () => ({ success: false, error: "No auth provider" }),
+  logout: () => {},
+  updateUser: async () => ({ success: false, error: "No auth provider" }),
+});
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
@@ -37,13 +43,24 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const updateUser = async (data) => {
+    if (!user?.id) return { success: false, error: "Not logged in." };
+    try {
+      const { user: updated } = await api.patchUser(user.id, data);
+      persist(updated);
+      return { success: true, user: updated };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
   const logout = () => {
     try { localStorage.removeItem("pairgo_user"); } catch {}
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

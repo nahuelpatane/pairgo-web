@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Globe } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import LoginModal from "../components/LoginModal";
 import SignupModal from "../components/SignupModal";
@@ -21,6 +21,83 @@ const HERO_IMAGES = [
   "https://images.unsplash.com/photo-1529108190281-9a4f620bc2d8?w=1600&q=80",
 ];
 
+const LANGS = [
+  { code: "EN", label: "English",    flag: "🇬🇧" },
+  { code: "ES", label: "Español",    flag: "🇪🇸" },
+  { code: "FR", label: "Français",   flag: "🇫🇷" },
+  { code: "IT", label: "Italiano",   flag: "🇮🇹" },
+  { code: "PT", label: "Português",  flag: "🇧🇷" },
+  { code: "JA", label: "日本語",     flag: "🇯🇵" },
+];
+
+const WORKER_BGS = ["rgba(232,101,74,.12)","rgba(229,161,0,.12)","rgba(37,99,235,.12)","rgba(27,122,90,.12)","rgba(232,101,74,.12)","rgba(37,99,235,.12)"];
+const MANAGER_BGS = ["rgba(232,101,74,.12)","rgba(27,122,90,.12)","rgba(229,161,0,.12)","rgba(37,99,235,.12)","rgba(232,101,74,.12)","rgba(27,122,90,.12)"];
+const STEP_ICONS = ["📝","🔍","✅","✈️"];
+const STEP_BGS  = ["var(--coral-glow)","var(--ocean-soft)","var(--forest-soft)","var(--gold-soft)"];
+
+const TRANSLATIONS = {
+  EN: {
+    nav: { login:"Log In", signup:"Sign Up", profile:"My Profile", logout:"Log out" },
+    hero: { t1:"Swap your job.", t2:"Keep moving.", sub:"Find someone in another city doing your same role. Swap positions. Travel with a guaranteed job from day one.", s1:"Workers", s2:"Active swaps", s3:"Avg rating" },
+    carousel: { label:"Every industry", title:"Swap across any role", sub:"From coffee shops to cattle farms. Pairgo works for any job where one skilled person can step into another's shoes.", count:"08 industries" },
+    how: { label:"How it works", title:"Four steps to your next adventure", sub:"No interviews, no uncertainty. Just a verified swap with someone ready to go.", steps:[{t:"Post your swap",d:"Share your current role, skills, and where you want to go next."},{t:"Find your match",d:"Browse verified workers in your target city with matching skills and great ratings."},{t:"Managers approve",d:"Both managers review the candidate's profile and approve. Full transparency."},{t:"Travel & start",d:"Your position is confirmed. Pack your bags and start working from day one."}] },
+    cities: { label:"Explore", title:"Popular swap destinations", sub:"The most active cities for job swaps. New destinations are added as the community grows.", count:"06 destinations" },
+    ben: { label:"Benefits", title:"Built for both sides", sub:"Whether you're chasing your next adventure or keeping your team running smooth.", tabW:"🎒 For Workers", tabM:"🏢 For Managers", workers:[{icon:"💼",t:"Job on arrival",d:"No more arriving broke. Your position is confirmed before you leave."},{icon:"⭐",t:"Portable reputation",d:"Ratings and verified skills follow you everywhere. Every swap makes you stronger."},{icon:"🌏",t:"Explore confidently",d:"New city, no financial risk. You know your schedule, your manager, your role."},{icon:"🤝",t:"Meet your swap partner",d:"Chat before you swap. Get tips about the city, the job, and the team."},{icon:"📈",t:"Grow your career",d:"Different environments, new skills, a resume that shows real adaptability."},{icon:"🔒",t:"Verified & safe",d:"Every business is ABN-verified. Every worker is ID-checked. Real reviews from real managers."}], managers:[{icon:"⚡",t:"Zero downtime",d:"Worker leaves, replacement arrives the same week. No gap in your roster."},{icon:"✅",t:"Pre-vetted candidates",d:"Verified skills, manager ratings, complete work history — before you approve."},{icon:"💰",t:"Cut recruitment costs",d:"No job ads, no interviews, no trial shifts. We handle the matching."},{icon:"📊",t:"Full transparency",d:"Detailed profiles with reliability scores and real comments from previous employers."},{icon:"🎯",t:"One-click approval",d:"Review the candidate, tap approve. The simplest hiring ever."},{icon:"🔄",t:"Consistent quality",d:"Workers perform because their rating directly affects future swap opportunities."}] },
+    proof: { label:"Stories", title:"Real people, real swaps", sub:"Hear from backpackers and managers who tested the concept." },
+    cta: { title:"Pairgo is live", sub:"Thousands of workers already swapping across Australia. Your next adventure starts now.", stats:[{val:"2,400+",label:"Workers"},{val:"340+",label:"Swaps done"},{val:"6",label:"Cities"},{val:"4.9★",label:"Avg rating"}] },
+  },
+  ES: {
+    nav: { login:"Iniciar sesión", signup:"Registrarse", profile:"Mi Perfil", logout:"Cerrar sesión" },
+    hero: { t1:"Intercambia tu trabajo.", t2:"Sigue moviéndote.", sub:"Encuentra a alguien en otra ciudad que haga tu mismo rol. Intercambia posiciones. Viaja con un trabajo garantizado desde el primer día.", s1:"Trabajadores", s2:"Swaps activos", s3:"Valoración media" },
+    carousel: { label:"Todas las industrias", title:"Intercambia en cualquier rol", sub:"De cafeterías a granjas ganaderas. Pairgo funciona para cualquier trabajo donde una persona capacitada pueda ocupar el lugar de otra.", count:"08 industrias" },
+    how: { label:"Cómo funciona", title:"Cuatro pasos a tu próxima aventura", sub:"Sin entrevistas, sin incertidumbre. Solo un intercambio verificado con alguien listo para ir.", steps:[{t:"Publica tu swap",d:"Comparte tu rol actual, habilidades y a dónde quieres ir."},{t:"Encuentra tu match",d:"Explora trabajadores verificados en tu ciudad destino con habilidades similares."},{t:"Los managers aprueban",d:"Ambos managers revisan el perfil y aprueban. Transparencia total."},{t:"Viaja y empieza",d:"Tu posición está confirmada. Haz las maletas y trabaja desde el primer día."}] },
+    cities: { label:"Explorar", title:"Destinos populares de swap", sub:"Las ciudades más activas para intercambios de trabajo. Se añaden nuevos destinos a medida que crece la comunidad.", count:"06 destinos" },
+    ben: { label:"Beneficios", title:"Pensado para todos", sub:"Ya sea que busques aventura o mantener tu equipo en marcha.", tabW:"🎒 Para Trabajadores", tabM:"🏢 Para Managers", workers:[{icon:"💼",t:"Trabajo al llegar",d:"No más llegar sin dinero. Tu puesto está confirmado antes de salir."},{icon:"⭐",t:"Reputación portable",d:"Tus valoraciones y habilidades te siguen a todos lados. Cada swap te hace más fuerte."},{icon:"🌏",t:"Explora con confianza",d:"Nueva ciudad, sin riesgo financiero. Conoces tu horario, tu manager y tu rol."},{icon:"🤝",t:"Conoce a tu compañero",d:"Chatea antes del swap. Obtén consejos sobre la ciudad, el trabajo y el equipo."},{icon:"📈",t:"Crece profesionalmente",d:"Diferentes entornos, nuevas habilidades, un CV que muestra adaptabilidad real."},{icon:"🔒",t:"Verificado y seguro",d:"Cada empresa está verificada. Cada trabajador tiene su ID comprobado. Reseñas reales."}], managers:[{icon:"⚡",t:"Cero tiempo muerto",d:"El trabajador se va, el reemplazo llega la misma semana. Sin huecos en tu equipo."},{icon:"✅",t:"Candidatos pre-evaluados",d:"Habilidades verificadas, valoraciones de managers, historial completo — antes de aprobar."},{icon:"💰",t:"Reduce costes de selección",d:"Sin anuncios, sin entrevistas, sin turnos de prueba. Nosotros hacemos el matching."},{icon:"📊",t:"Transparencia total",d:"Perfiles detallados con puntuaciones de fiabilidad y comentarios reales de empleadores anteriores."},{icon:"🎯",t:"Aprobación en un clic",d:"Revisa al candidato, aprueba. La contratación más sencilla del mundo."},{icon:"🔄",t:"Calidad constante",d:"Los trabajadores rinden porque su valoración afecta directamente sus futuras oportunidades."}] },
+    proof: { label:"Historias", title:"Personas reales, swaps reales", sub:"Escucha a mochileros y managers que probaron el concepto." },
+    cta: { title:"Pairgo está activo", sub:"Miles de trabajadores ya haciendo swaps en Australia. Tu próxima aventura empieza ahora.", stats:[{val:"2.400+",label:"Trabajadores"},{val:"340+",label:"Swaps realizados"},{val:"6",label:"Ciudades"},{val:"4.9★",label:"Valoración media"}] },
+  },
+  FR: {
+    nav: { login:"Connexion", signup:"S'inscrire", profile:"Mon Profil", logout:"Déconnexion" },
+    hero: { t1:"Échangez votre emploi.", t2:"Continuez à voyager.", sub:"Trouvez quelqu'un dans une autre ville qui fait le même travail que vous. Échangez vos postes. Voyagez avec un emploi garanti dès le premier jour.", s1:"Travailleurs", s2:"Échanges actifs", s3:"Note moyenne" },
+    carousel: { label:"Toutes les industries", title:"Échangez dans n'importe quel rôle", sub:"Des cafés aux fermes. Pairgo fonctionne pour tout emploi où une personne qualifiée peut remplacer une autre.", count:"08 industries" },
+    how: { label:"Comment ça marche", title:"Quatre étapes vers votre aventure", sub:"Pas d'entretiens, pas d'incertitude. Juste un échange vérifié avec quelqu'un prêt à partir.", steps:[{t:"Publiez votre échange",d:"Partagez votre rôle actuel, vos compétences et votre destination souhaitée."},{t:"Trouvez votre match",d:"Parcourez les travailleurs vérifiés dans votre ville cible avec les compétences correspondantes."},{t:"Les managers approuvent",d:"Les deux managers examinent le profil et approuvent. Transparence totale."},{t:"Voyagez et commencez",d:"Votre poste est confirmé. Faites vos valises et travaillez dès le premier jour."}] },
+    cities: { label:"Explorer", title:"Destinations populaires", sub:"Les villes les plus actives pour les échanges. De nouvelles destinations sont ajoutées au fil de la croissance.", count:"06 destinations" },
+    ben: { label:"Avantages", title:"Conçu pour les deux", sub:"Que vous cherchiez l'aventure ou à maintenir votre équipe opérationnelle.", tabW:"🎒 Pour les Travailleurs", tabM:"🏢 Pour les Managers", workers:[{icon:"💼",t:"Emploi à l'arrivée",d:"Fini d'arriver sans argent. Votre poste est confirmé avant votre départ."},{icon:"⭐",t:"Réputation portable",d:"Vos notes et compétences vous suivent partout. Chaque échange vous renforce."},{icon:"🌏",t:"Explorez en toute confiance",d:"Nouvelle ville, sans risque financier. Vous connaissez votre emploi du temps et votre rôle."},{icon:"🤝",t:"Rencontrez votre partenaire",d:"Chattez avant l'échange. Obtenez des conseils sur la ville, le travail et l'équipe."},{icon:"📈",t:"Développez votre carrière",d:"Nouveaux environnements, nouvelles compétences, un CV qui montre une vraie adaptabilité."},{icon:"🔒",t:"Vérifié et sécurisé",d:"Chaque entreprise est vérifiée. Chaque travailleur est contrôlé. Vrais avis de vrais managers."}], managers:[{icon:"⚡",t:"Zéro temps d'arrêt",d:"Le travailleur part, le remplaçant arrive la même semaine. Aucune lacune dans votre équipe."},{icon:"✅",t:"Candidats pré-vérifiés",d:"Compétences vérifiées, notes de managers, historique complet — avant votre approbation."},{icon:"💰",t:"Réduisez les coûts",d:"Pas d'annonces, pas d'entretiens, pas de périodes d'essai. Nous gérons le matching."},{icon:"📊",t:"Transparence totale",d:"Profils détaillés avec scores de fiabilité et commentaires réels d'anciens employeurs."},{icon:"🎯",t:"Approbation en un clic",d:"Examinez le candidat, approuvez. L'embauche la plus simple qui soit."},{icon:"🔄",t:"Qualité constante",d:"Les travailleurs performent car leur note affecte directement leurs futures opportunités."}] },
+    proof: { label:"Témoignages", title:"De vraies personnes, de vrais échanges", sub:"Écoutez les backpackers et managers qui ont testé le concept." },
+    cta: { title:"Pairgo est en ligne", sub:"Des milliers de travailleurs échangent déjà à travers l'Australie. Votre prochaine aventure commence maintenant.", stats:[{val:"2 400+",label:"Travailleurs"},{val:"340+",label:"Échanges réalisés"},{val:"6",label:"Villes"},{val:"4.9★",label:"Note moyenne"}] },
+  },
+  IT: {
+    nav: { login:"Accedi", signup:"Registrati", profile:"Il Mio Profilo", logout:"Esci" },
+    hero: { t1:"Scambia il tuo lavoro.", t2:"Continua a muoverti.", sub:"Trova qualcuno in un'altra città che fa il tuo stesso lavoro. Scambiate le posizioni. Viaggia con un lavoro garantito dal primo giorno.", s1:"Lavoratori", s2:"Scambi attivi", s3:"Voto medio" },
+    carousel: { label:"Ogni settore", title:"Scambia in qualsiasi ruolo", sub:"Dai caffè alle fattorie. Pairgo funziona per qualsiasi lavoro in cui una persona qualificata può sostituire un'altra.", count:"08 settori" },
+    how: { label:"Come funziona", title:"Quattro passi verso la tua avventura", sub:"Nessun colloquio, nessuna incertezza. Solo uno scambio verificato con qualcuno pronto a partire.", steps:[{t:"Pubblica il tuo swap",d:"Condividi il tuo ruolo attuale, le tue competenze e dove vuoi andare."},{t:"Trova il tuo match",d:"Cerca lavoratori verificati nella tua città di destinazione con competenze simili."},{t:"I manager approvano",d:"Entrambi i manager esaminano il profilo e approvano. Massima trasparenza."},{t:"Viaggia e inizia",d:"La tua posizione è confermata. Fai i bagagli e inizia a lavorare dal primo giorno."}] },
+    cities: { label:"Esplora", title:"Destinazioni popolari", sub:"Le città più attive per gli scambi di lavoro. Nuove destinazioni vengono aggiunte man mano che la comunità cresce.", count:"06 destinazioni" },
+    ben: { label:"Vantaggi", title:"Pensato per entrambi", sub:"Che tu stia cercando avventura o mantenendo il tuo team operativo.", tabW:"🎒 Per i Lavoratori", tabM:"🏢 Per i Manager", workers:[{icon:"💼",t:"Lavoro all'arrivo",d:"Niente più arrivi senza soldi. La tua posizione è confermata prima di partire."},{icon:"⭐",t:"Reputazione portabile",d:"Valutazioni e competenze ti seguono ovunque. Ogni scambio ti rende più forte."},{icon:"🌏",t:"Esplora con fiducia",d:"Nuova città, nessun rischio finanziario. Conosci il tuo orario, il manager e il ruolo."},{icon:"🤝",t:"Incontra il tuo partner",d:"Chatta prima dello scambio. Ricevi consigli sulla città, il lavoro e il team."},{icon:"📈",t:"Cresci professionalmente",d:"Ambienti diversi, nuove competenze, un curriculum che mostra vera adattabilità."},{icon:"🔒",t:"Verificato e sicuro",d:"Ogni azienda è verificata. Ogni lavoratore è controllato. Recensioni reali da veri manager."}], managers:[{icon:"⚡",t:"Zero tempi morti",d:"Il lavoratore parte, il sostituto arriva la stessa settimana. Nessuna lacuna nel team."},{icon:"✅",t:"Candidati pre-valutati",d:"Competenze verificate, valutazioni dei manager, storico completo — prima dell'approvazione."},{icon:"💰",t:"Riduci i costi",d:"Nessun annuncio, nessun colloquio, nessun turno di prova. Gestiamo noi il matching."},{icon:"📊",t:"Massima trasparenza",d:"Profili dettagliati con punteggi di affidabilità e commenti reali di datori di lavoro precedenti."},{icon:"🎯",t:"Approvazione in un clic",d:"Esamina il candidato, approva. L'assunzione più semplice di sempre."},{icon:"🔄",t:"Qualità costante",d:"I lavoratori performano perché la valutazione influisce direttamente sulle future opportunità."}] },
+    proof: { label:"Storie", title:"Persone reali, scambi reali", sub:"Ascolta i backpacker e i manager che hanno testato il concetto." },
+    cta: { title:"Pairgo è live", sub:"Migliaia di lavoratori stanno già scambiando in tutta l'Australia. La tua prossima avventura inizia ora.", stats:[{val:"2.400+",label:"Lavoratori"},{val:"340+",label:"Scambi completati"},{val:"6",label:"Città"},{val:"4.9★",label:"Voto medio"}] },
+  },
+  PT: {
+    nav: { login:"Entrar", signup:"Cadastrar", profile:"Meu Perfil", logout:"Sair" },
+    hero: { t1:"Troque seu trabalho.", t2:"Continue se movendo.", sub:"Encontre alguém em outra cidade fazendo a mesma função que você. Troquem de posição. Viaje com um emprego garantido desde o primeiro dia.", s1:"Trabalhadores", s2:"Trocas ativas", s3:"Avaliação média" },
+    carousel: { label:"Todas as indústrias", title:"Troque em qualquer função", sub:"De cafeterias a fazendas. O Pairgo funciona para qualquer trabalho em que uma pessoa qualificada possa substituir outra.", count:"08 indústrias" },
+    how: { label:"Como funciona", title:"Quatro passos para a sua aventura", sub:"Sem entrevistas, sem incerteza. Apenas uma troca verificada com alguém pronto para ir.", steps:[{t:"Publique seu swap",d:"Compartilhe seu cargo atual, habilidades e para onde quer ir."},{t:"Encontre seu match",d:"Explore trabalhadores verificados na cidade destino com habilidades compatíveis."},{t:"Gerentes aprovam",d:"Ambos os gerentes analisam o perfil e aprovam. Transparência total."},{t:"Viaje e comece",d:"Sua posição está confirmada. Faça as malas e comece a trabalhar desde o primeiro dia."}] },
+    cities: { label:"Explorar", title:"Destinos populares", sub:"As cidades mais ativas para trocas de trabalho. Novos destinos são adicionados conforme a comunidade cresce.", count:"06 destinos" },
+    ben: { label:"Benefícios", title:"Feito para os dois lados", sub:"Seja você em busca de aventura ou mantendo sua equipe funcionando.", tabW:"🎒 Para Trabalhadores", tabM:"🏢 Para Gerentes", workers:[{icon:"💼",t:"Trabalho na chegada",d:"Chegar sem dinheiro não existe mais. Sua vaga está confirmada antes de sair."},{icon:"⭐",t:"Reputação portátil",d:"Avaliações e habilidades te acompanham em todos os lugares. Cada troca te fortalece."},{icon:"🌏",t:"Explore com confiança",d:"Nova cidade, sem risco financeiro. Você sabe seu horário, gerente e função."},{icon:"🤝",t:"Conheça seu parceiro",d:"Converse antes da troca. Receba dicas sobre a cidade, o trabalho e a equipe."},{icon:"📈",t:"Cresça profissionalmente",d:"Ambientes diferentes, novas habilidades, um currículo que mostra adaptabilidade real."},{icon:"🔒",t:"Verificado e seguro",d:"Cada empresa é verificada. Cada trabalhador tem ID conferido. Avaliações reais."}], managers:[{icon:"⚡",t:"Zero tempo parado",d:"Trabalhador sai, substituto chega na mesma semana. Sem lacunas na equipe."},{icon:"✅",t:"Candidatos pré-avaliados",d:"Habilidades verificadas, avaliações de gerentes, histórico completo — antes de aprovar."},{icon:"💰",t:"Reduza custos",d:"Sem anúncios, sem entrevistas, sem turnos de teste. Cuidamos do matching."},{icon:"📊",t:"Transparência total",d:"Perfis detalhados com pontuações de confiabilidade e comentários reais de empregadores anteriores."},{icon:"🎯",t:"Aprovação em um clique",d:"Analise o candidato, aprove. A contratação mais simples de sempre."},{icon:"🔄",t:"Qualidade constante",d:"Trabalhadores rendem porque a avaliação afeta diretamente as oportunidades futuras."}] },
+    proof: { label:"Histórias", title:"Pessoas reais, trocas reais", sub:"Ouça backpackers e gerentes que testaram o conceito." },
+    cta: { title:"Pairgo está no ar", sub:"Milhares de trabalhadores já trocando em toda a Austrália. Sua próxima aventura começa agora.", stats:[{val:"2.400+",label:"Trabalhadores"},{val:"340+",label:"Trocas feitas"},{val:"6",label:"Cidades"},{val:"4.9★",label:"Avaliação média"}] },
+  },
+  JA: {
+    nav: { login:"ログイン", signup:"登録", profile:"マイプロフィール", logout:"ログアウト" },
+    hero: { t1:"仕事をスワップしよう。", t2:"旅を続けよう。", sub:"同じ職種の人を別の都市で見つけて、ポジションを交換しましょう。初日から仕事が保証された状態で旅ができます。", s1:"ワーカー数", s2:"アクティブなスワップ", s3:"平均評価" },
+    carousel: { label:"あらゆる業界", title:"どんな職種でもスワップ", sub:"カフェから農場まで。スキルのある人が別の人の仕事を引き継げるなら、Pairgoはどんな仕事にも対応できます。", count:"08 業界" },
+    how: { label:"仕組み", title:"次の冒険への4ステップ", sub:"面接なし、不安なし。準備ができた人との確認済みスワップだけ。", steps:[{t:"スワップを投稿",d:"現在の役職、スキル、行きたい場所を共有しましょう。"},{t:"マッチを見つける",d:"目標都市のスキルが一致する認証済みワーカーを探しましょう。"},{t:"マネージャーが承認",d:"両方のマネージャーが候補者のプロフィールを確認し承認します。完全な透明性。"},{t:"旅して働き始める",d:"ポジションが確定したら荷物をまとめて、初日から働き始めましょう。"}] },
+    cities: { label:"探索", title:"人気のスワップ先", sub:"ジョブスワップで最もアクティブな都市。コミュニティの成長とともに新しい目的地が追加されます。", count:"06 目的地" },
+    ben: { label:"メリット", title:"両方のために作られた", sub:"次の冒険を追いかけていても、チームを円滑に維持していても。", tabW:"🎒 ワーカー向け", tabM:"🏢 マネージャー向け", workers:[{icon:"💼",t:"到着時から仕事あり",d:"お金なしで到着することはもうありません。出発前にポジションが確定します。"},{icon:"⭐",t:"持ち運べる評価",d:"評価と認証済みスキルはどこへ行っても付いてきます。スワップするたびに強くなります。"},{icon:"🌏",t:"自信を持って探索",d:"新しい都市、金銭的リスクなし。スケジュール、マネージャー、役割がわかっています。"},{icon:"🤝",t:"パートナーと交流",d:"スワップ前にチャットしましょう。都市、仕事、チームについてのヒントを得られます。"},{icon:"📈",t:"キャリアを伸ばす",d:"異なる環境、新しいスキル、真の適応力を示す履歴書。"},{icon:"🔒",t:"認証済みで安全",d:"すべての企業はABN認証済み。すべてのワーカーはID確認済み。本物のレビュー。"}], managers:[{icon:"⚡",t:"ダウンタイムゼロ",d:"ワーカーが去った同じ週に代替者が到着。人員の穴なし。"},{icon:"✅",t:"事前審査済みの候補者",d:"承認前に、検証済みのスキル、マネージャー評価、完全な職歴を確認できます。"},{icon:"💰",t:"採用コストを削減",d:"求人広告なし、面接なし、試用シフトなし。マッチングはPairgoが担当します。"},{icon:"📊",t:"完全な透明性",d:"信頼性スコアと前の雇用主からの本物のコメントを含む詳細なプロフィール。"},{icon:"🎯",t:"ワンクリック承認",d:"候補者を確認して承認するだけ。史上最もシンプルな採用。"},{icon:"🔄",t:"一貫した品質",d:"評価が将来のスワップ機会に直接影響するため、ワーカーは高いパフォーマンスを発揮します。"}] },
+    proof: { label:"ストーリー", title:"本物の人々、本物のスワップ", sub:"このコンセプトをテストしたバックパッカーとマネージャーの声を聞きましょう。" },
+    cta: { title:"Pairgoはライブ中", sub:"すでに何千ものワーカーがオーストラリア全土でスワップしています。あなたの次の冒険は今始まります。", stats:[{val:"2,400+",label:"ワーカー"},{val:"340+",label:"完了したスワップ"},{val:"6",label:"都市"},{val:"4.9★",label:"平均評価"}] },
+  },
+};
+
 const CITY_IMAGES = [
   { url: "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=1200&q=85", city: "Sydney", jobs: "340+ swaps" },
   { url: "https://images.unsplash.com/photo-1477204606026-62a8ddc840ae?w=900&q=85", city: "Melbourne", jobs: "280+ swaps" },
@@ -34,6 +111,10 @@ export default function LandingPage({ onViewProfile, onLoginSuccess }) {
   const { user, logout } = useAuth();
   const [loginOpen, setLoginOpen] = useState(false);
   const [signupOpen, setSignupOpen] = useState(false);
+  const [lang, setLang] = useState("EN");
+  const tx = TRANSLATIONS[lang] ?? TRANSLATIONS.EN;
+  const [langOpen, setLangOpen] = useState(false);
+  const langRef = useRef(null);
   const [heroIdx, setHeroIdx] = useState(0);
   const [role, setRole] = useState("worker");
   const [carouselX, setCarouselX] = useState(0);
@@ -55,6 +136,12 @@ export default function LandingPage({ onViewProfile, onLoginSuccess }) {
     );
     Object.values(observerRefs.current).forEach((el) => { if (el) observer.observe(el); });
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => { if (langRef.current && !langRef.current.contains(e.target)) setLangOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   useEffect(() => {
@@ -81,15 +168,38 @@ export default function LandingPage({ onViewProfile, onLoginSuccess }) {
         .fu{opacity:0;transform:translateY(44px);transition:opacity .85s cubic-bezier(.16,1,.3,1),transform .85s cubic-bezier(.16,1,.3,1);}
         .fu.v{opacity:1;transform:translateY(0);}
         .d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.3s}.d4{transition-delay:.4s}.d5{transition-delay:.5s}.d6{transition-delay:.6s}
-        .nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(24px);background:rgba(26,26,24,.7);border-bottom:1px solid rgba(255,255,255,.05);}
-        .nav-logo{display:flex;align-items:center;gap:10px;font-family:var(--font-d);font-size:26px;font-weight:800;color:#fff;letter-spacing:-1px;}
+        .nav{position:fixed;top:14px;left:50%;transform:translateX(-50%);width:calc(100% - 48px);max-width:1240px;z-index:100;padding:10px 12px 10px 20px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(32px) saturate(180%);-webkit-backdrop-filter:blur(32px) saturate(180%);background:rgba(13,13,11,.82);border:1px solid rgba(255,255,255,.09);border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.06);}
+        .nav::before{content:'';position:absolute;inset:-1px;border-radius:21px;padding:1px;background:linear-gradient(135deg,rgba(232,101,74,.18),rgba(255,255,255,.04),transparent 60%);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;}
+        .nav-logo{display:flex;align-items:center;gap:10px;font-family:var(--font-d);font-size:25px;font-weight:800;color:#fff;letter-spacing:-1px;text-decoration:none;position:relative;transition:opacity .2s;}
+        .nav-logo:hover{opacity:.8;}
         .nav-logo span{color:var(--coral);}
-        .nav-logo img{width:36px;height:36px;border-radius:10px;object-fit:cover;}
-        .nav-links{display:flex;gap:28px;align-items:center;}
-        .nav-links a{color:rgba(255,255,255,.55);text-decoration:none;font-family:var(--font-b);font-size:14px;font-weight:500;transition:color .2s;letter-spacing:-.2px;}
-        .nav-links a:hover{color:#fff;}
-        .nav-cta{background:var(--coral)!important;color:#fff!important;padding:11px 26px;border-radius:100px;font-weight:600!important;transition:all .25s!important;letter-spacing:0!important;}
-        .nav-cta:hover{background:var(--coral-deep)!important;transform:scale(1.04);}
+        .nav-logo img{width:34px;height:34px;border-radius:9px;object-fit:cover;}
+        .nav-live{position:absolute;top:-2px;right:-10px;width:6px;height:6px;background:#4ade80;border-radius:50%;box-shadow:0 0 8px rgba(74,222,128,.8);}
+        .nav-live::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:1.5px solid rgba(74,222,128,.4);animation:pulse 2s ease-out infinite;}
+        .nav-links{display:flex;gap:10px;align-items:center;}
+        .nav-login{display:flex;align-items:center;padding:9px 18px;border:1px solid rgba(255,255,255,.12);border-radius:100px;font-family:var(--font-b);font-size:13px;font-weight:500;color:rgba(255,255,255,.6);background:transparent;cursor:pointer;transition:all .2s;white-space:nowrap;}
+        .nav-login:hover{border-color:rgba(255,255,255,.28);color:#fff;background:rgba(255,255,255,.05);}
+        .nav-cta{display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,var(--coral),var(--coral-deep))!important;color:#fff!important;padding:9px 20px;border-radius:100px;font-family:var(--font-b)!important;font-size:13px!important;font-weight:600!important;cursor:pointer;border:none;transition:all .25s!important;box-shadow:0 0 20px rgba(232,101,74,.3),inset 0 1px 0 rgba(255,255,255,.15)!important;white-space:nowrap;}
+        .nav-cta:hover{box-shadow:0 0 32px rgba(232,101,74,.5),inset 0 1px 0 rgba(255,255,255,.15)!important;transform:scale(1.04)!important;}
+        .nav-cta svg{transition:transform .2s;}
+        .nav-cta:hover svg{transform:translateX(2px);}
+        .nav-sep{width:1px;height:18px;background:rgba(255,255,255,.1);flex-shrink:0;margin:0 2px;}
+        .lang-switcher{position:relative;}
+        .lang-btn{display:flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:8px 12px;cursor:pointer;transition:all .2s;font-family:var(--font-b);font-size:12px;font-weight:600;color:rgba(255,255,255,.55);}
+        .lang-btn:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.9);}
+        .lang-btn-chevron{opacity:.4;transition:transform .25s;flex-shrink:0;}
+        .lang-btn.open{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.18);color:rgba(255,255,255,.9);}
+        .lang-btn.open .lang-btn-chevron{transform:rotate(180deg);opacity:.7;}
+        .lang-dropdown{position:absolute;top:calc(100% + 12px);right:0;background:#151513;border:1px solid rgba(255,255,255,.1);border-radius:16px;overflow:hidden;min-width:174px;box-shadow:0 24px 56px rgba(0,0,0,.55);z-index:200;animation:fadeUp .18s cubic-bezier(.16,1,.3,1);}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+        .lang-opt{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;transition:background .15s;}
+        .lang-opt:hover{background:rgba(255,255,255,.06);}
+        .lang-opt.active{background:rgba(255,255,255,.04);}
+        .lang-opt-flag{font-size:15px;line-height:1;flex-shrink:0;}
+        .lang-opt-name{font-family:var(--font-b);font-size:13px;color:rgba(255,255,255,.65);flex:1;}
+        .lang-opt.active .lang-opt-name{color:#fff;font-weight:600;}
+        .lang-opt-code{font-family:var(--font-b);font-size:10px;font-weight:700;color:var(--coral);letter-spacing:.5px;}
+        @media(max-width:640px){.nav{top:0;left:0;right:0;transform:none;width:100%;max-width:none;border-radius:0;border-left:none;border-right:none;border-top:none;padding:10px 14px;}.nav::before{border-radius:0;}}
         .hero{position:relative;min-height:100vh;display:flex;align-items:center;overflow:hidden;background:#111;}
         .hero-bg{position:absolute;inset:0;transition:opacity 1.2s ease;}
         .hero-bg img{width:100%;height:100%;object-fit:cover;animation:hero-zoom 20s ease-in-out infinite alternate;}
@@ -224,40 +334,61 @@ export default function LandingPage({ onViewProfile, onLoginSuccess }) {
         .stitle{font-family:var(--font-d);font-size:clamp(32px,4.5vw,52px);font-weight:800;color:var(--ink);line-height:1.08;letter-spacing:-2px;margin-bottom:16px;}
         .ssub{font-family:var(--font-b);font-size:17px;color:var(--ink-muted);line-height:1.65;max-width:520px;}
         @media(max-width:1024px){.hero-content{grid-template-columns:1fr;padding:120px 24px 60px;}.hero-right{display:none;}.steps{grid-template-columns:repeat(2,1fr);}.step-line{display:none;}.cities-grid{grid-template-columns:repeat(2,1fr);grid-template-rows:auto;}.city-card-wide{grid-column:span 2;}.city-card{aspect-ratio:16/9;}.ben-grid{grid-template-columns:1fr 1fr;}.proof-grid{grid-template-columns:1fr;}}
-        @media(max-width:640px){.steps{grid-template-columns:1fr;}.cities-grid{grid-template-columns:repeat(2,1fr);grid-template-rows:auto;padding:0 16px;}.city-card-wide{grid-column:span 2;}.city-card{aspect-ratio:4/3;}.ben-grid{grid-template-columns:1fr;}.nav{padding:12px 16px;}.nav-links a:not(.nav-cta){display:none;}.carousel-header,.how-inner,.ben-inner,.proof-section,.cities-header,.cta-inner,.footer{padding-left:20px;padding-right:20px;}}
+        @media(max-width:640px){.steps{grid-template-columns:1fr;}.cities-grid{grid-template-columns:repeat(2,1fr);grid-template-rows:auto;padding:0 16px;}.city-card-wide{grid-column:span 2;}.city-card{aspect-ratio:4/3;}.ben-grid{grid-template-columns:1fr;}.nav{padding:12px 16px;}.lang-btn span:nth-child(2){display:none;}.carousel-header,.how-inner,.ben-inner,.proof-section,.cities-header,.cta-inner,.footer{padding-left:20px;padding-right:20px;}}
       `}</style>
 
       {/* NAV */}
       <nav className="nav">
-        <div className="nav-logo"><img src="/logo.png" alt="Pairgo logo" />pair<span>go</span></div>
+        <div className="nav-logo" style={{ position: "relative" }}>
+          <img src="/logo.png" alt="Pairgo logo" />
+          pair<span>go</span>
+          <div className="nav-live" />
+        </div>
+
         <div className="nav-links">
-          <a href="#how">How it works</a>
-          <a href="#cities">Cities</a>
-          <a href="#benefits">Benefits</a>
+          {/* Language switcher */}
+          <div className="lang-switcher" ref={langRef}>
+            <button className={`lang-btn${langOpen ? " open" : ""}`} onClick={() => setLangOpen(o => !o)}>
+              <Globe size={13} strokeWidth={1.8} />
+              <span>{LANGS.find(l => l.code === lang)?.flag}</span>
+              <span style={{ letterSpacing: ".3px" }}>{lang}</span>
+              <svg className="lang-btn-chevron" width="9" height="5" viewBox="0 0 9 5" fill="none"><path d="M1 1L4.5 4L8 1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            {langOpen && (
+              <div className="lang-dropdown">
+                {LANGS.map(l => (
+                  <div key={l.code} className={`lang-opt${lang === l.code ? " active" : ""}`} onClick={() => { setLang(l.code); setLangOpen(false); }}>
+                    <span className="lang-opt-flag">{l.flag}</span>
+                    <span className="lang-opt-name">{l.label}</span>
+                    <span className="lang-opt-code">{l.code}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="nav-sep" />
+
+          {/* Auth */}
           {user ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <button onClick={onViewProfile} style={{ display: "flex", alignItems: "center", gap: 9, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 100, padding: "7px 16px 7px 7px", cursor: "pointer", transition: "all .2s" }}
-                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,.12)"; e.currentTarget.style.borderColor = "rgba(255,255,255,.2)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,.07)"; e.currentTarget.style.borderColor = "rgba(255,255,255,.1)"; }}>
-                <div style={{ width: 28, height: 28, borderRadius: "50%", background: user.role === "manager" ? "rgba(37,99,235,.2)" : "var(--coral-glow)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button onClick={onViewProfile} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 100, padding: "7px 15px 7px 7px", cursor: "pointer", transition: "all .2s" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,.11)"; e.currentTarget.style.borderColor = "rgba(255,255,255,.2)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,.06)"; e.currentTarget.style.borderColor = "rgba(255,255,255,.1)"; }}>
+                <div style={{ width: 26, height: 26, borderRadius: "50%", background: user.role === "manager" ? "rgba(37,99,235,.25)" : "rgba(232,101,74,.18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>
                   {user.role === "manager" ? "🏢" : "🎒"}
                 </div>
-                <span style={{ fontFamily: "var(--font-b)", fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,.85)" }}>My Profile</span>
+                <span style={{ fontFamily: "var(--font-b)", fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,.8)" }}>{tx.nav.profile}</span>
               </button>
-              <button onClick={logout} style={{ fontFamily: "var(--font-b)", fontSize: 13, color: "rgba(255,255,255,.35)", background: "none", border: "none", cursor: "pointer", transition: "color .2s" }}
-                onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,.65)"}
-                onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.35)"}>
-                Log out
-              </button>
+              <button onClick={logout} className="nav-login">{tx.nav.logout}</button>
             </div>
           ) : (
             <>
-              <button onClick={openLogin} style={{ fontFamily: "var(--font-b)", fontSize: 14, color: "rgba(255,255,255,.55)", background: "none", border: "none", cursor: "pointer", transition: "color .2s", fontWeight: 500, letterSpacing: "-.2px" }}
-                onMouseEnter={e => e.currentTarget.style.color = "#fff"}
-                onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.55)"}>
-                Log In
+              <button onClick={openLogin} className="nav-login">{tx.nav.login}</button>
+              <button onClick={openSignup} className="nav-cta">
+                {tx.nav.signup}
+                <ArrowUpRight size={13} strokeWidth={2.2} />
               </button>
-              <button onClick={openSignup} className="nav-cta" style={{ border: "none", cursor: "pointer" }}>Sign Up</button>
             </>
           )}
         </div>
@@ -272,10 +403,10 @@ export default function LandingPage({ onViewProfile, onLoginSuccess }) {
         <div className="hero-overlay" /><div className="hero-grain" />
         <div className="hero-content">
           <div className="hero-left">
-            <h1 className={`hero-title fu d1 ${isV("hero") ? "v" : ""}`}>Swap your job.<br /><em>Keep moving.</em></h1>
-            <p className={`hero-sub fu d2 ${isV("hero") ? "v" : ""}`}>Find someone in another city doing your same role. Swap positions. Travel with a guaranteed job from day one.</p>
+            <h1 className={`hero-title fu d1 ${isV("hero") ? "v" : ""}`}>{tx.hero.t1}<br /><em>{tx.hero.t2}</em></h1>
+            <p className={`hero-sub fu d2 ${isV("hero") ? "v" : ""}`}>{tx.hero.sub}</p>
             <div className={`hero-stats fu d3 ${isV("hero") ? "v" : ""}`}>
-              {[{ val: "2,400+", label: "Workers" }, { val: "340+", label: "Active swaps" }, { val: "4.9★", label: "Avg rating" }].flatMap((s, i) => [
+              {[{ val: "2,400+", label: tx.hero.s1 }, { val: "340+", label: tx.hero.s2 }, { val: "4.9★", label: tx.hero.s3 }].flatMap((s, i) => [
                 ...(i > 0 ? [<div key={`d${i}`} className="hero-stat-divider" />] : []),
                 <div key={i}><div className="hero-stat-val">{s.val}</div><div className="hero-stat-label">{s.label}</div></div>
               ])}
@@ -329,11 +460,11 @@ export default function LandingPage({ onViewProfile, onLoginSuccess }) {
       <section className="carousel-section" ref={(el) => { observerRefs.current["carousel"] = el; }} data-section="carousel">
         <div className="carousel-header">
           <div>
-            <div className={`slabel fu ${isV("carousel") ? "v" : ""}`}>Every industry</div>
-            <div className={`stitle fu d1 ${isV("carousel") ? "v" : ""}`}>Swap across any role</div>
-            <div className={`ssub fu d2 ${isV("carousel") ? "v" : ""}`}>From coffee shops to cattle farms. Pairgo works for any job where one skilled person can step into another's shoes.</div>
+            <div className={`slabel fu ${isV("carousel") ? "v" : ""}`}>{tx.carousel.label}</div>
+            <div className={`stitle fu d1 ${isV("carousel") ? "v" : ""}`}>{tx.carousel.title}</div>
+            <div className={`ssub fu d2 ${isV("carousel") ? "v" : ""}`}>{tx.carousel.sub}</div>
           </div>
-          <div className={`carousel-count fu d3 ${isV("carousel") ? "v" : ""}`}>08 industries</div>
+          <div className={`carousel-count fu d3 ${isV("carousel") ? "v" : ""}`}>{tx.carousel.count}</div>
         </div>
         <div className="carousel-overflow"
           onMouseEnter={() => { pausedRef.current = true; }}
@@ -356,20 +487,15 @@ export default function LandingPage({ onViewProfile, onLoginSuccess }) {
       <section id="how" className="how-section" ref={(el) => { observerRefs.current["how"] = el; }} data-section="how">
         <div className="how-inner">
           <div className={`fu ${isV("how") ? "v" : ""}`}>
-            <div className="slabel">How it works</div>
-            <div className="stitle">Four steps to your<br />next adventure</div>
-            <div className="ssub">No interviews, no uncertainty. Just a verified swap with someone ready to go.</div>
+            <div className="slabel">{tx.how.label}</div>
+            <div className="stitle">{tx.how.title}</div>
+            <div className="ssub">{tx.how.sub}</div>
           </div>
           <div className="steps">
-            {[
-              { n: "01", icon: "📝", bg: "var(--coral-glow)", t: "Post your swap", d: "Share your current role, skills, and where you want to go next." },
-              { n: "02", icon: "🔍", bg: "var(--ocean-soft)", t: "Find your match", d: "Browse verified workers in your target city with matching skills and great ratings." },
-              { n: "03", icon: "✅", bg: "var(--forest-soft)", t: "Managers approve", d: "Both managers review the candidate's profile and approve. Full transparency." },
-              { n: "04", icon: "✈️", bg: "var(--gold-soft)", t: "Travel & start", d: "Your position is confirmed. Pack your bags and start working from day one." },
-            ].map((s, i) => (
+            {tx.how.steps.map((s, i) => (
               <div key={i} className={`step fu d${i + 1} ${isV("how") ? "v" : ""}`}>
-                <div className="step-num">{s.n}</div>
-                <div className="step-icon" style={{ background: s.bg }}>{s.icon}</div>
+                <div className="step-num">0{i + 1}</div>
+                <div className="step-icon" style={{ background: STEP_BGS[i] }}>{STEP_ICONS[i]}</div>
                 <div className="step-title">{s.t}</div>
                 <div className="step-desc">{s.d}</div>
                 {i < 3 && <div className="step-line" />}
@@ -383,11 +509,11 @@ export default function LandingPage({ onViewProfile, onLoginSuccess }) {
       <section id="cities" className="cities-section" ref={(el) => { observerRefs.current["cities"] = el; }} data-section="cities">
         <div className="cities-header">
           <div>
-            <div className={`slabel fu ${isV("cities") ? "v" : ""}`}>Explore</div>
-            <div className={`stitle fu d1 ${isV("cities") ? "v" : ""}`}>Popular swap destinations</div>
-            <div className={`ssub fu d2 ${isV("cities") ? "v" : ""}`}>The most active cities for job swaps. New destinations are added as the community grows.</div>
+            <div className={`slabel fu ${isV("cities") ? "v" : ""}`}>{tx.cities.label}</div>
+            <div className={`stitle fu d1 ${isV("cities") ? "v" : ""}`}>{tx.cities.title}</div>
+            <div className={`ssub fu d2 ${isV("cities") ? "v" : ""}`}>{tx.cities.sub}</div>
           </div>
-          <div className={`cities-count fu d3 ${isV("cities") ? "v" : ""}`}>06 destinations</div>
+          <div className={`cities-count fu d3 ${isV("cities") ? "v" : ""}`}>{tx.cities.count}</div>
         </div>
         <div className="cities-grid">
           {CITY_IMAGES.map((c, i) => (
@@ -407,32 +533,18 @@ export default function LandingPage({ onViewProfile, onLoginSuccess }) {
       <section id="benefits" className="ben-section" ref={(el) => { observerRefs.current["ben"] = el; }} data-section="ben">
         <div className="ben-inner">
           <div className={`fu ${isV("ben") ? "v" : ""}`}>
-            <div className="slabel">Benefits</div>
-            <div className="stitle" style={{ color: "#fff" }}>Built for both sides</div>
-            <div className="ssub" style={{ color: "rgba(255,255,255,.4)" }}>Whether you're chasing your next adventure or keeping your team running smooth.</div>
+            <div className="slabel">{tx.ben.label}</div>
+            <div className="stitle" style={{ color: "#fff" }}>{tx.ben.title}</div>
+            <div className="ssub" style={{ color: "rgba(255,255,255,.4)" }}>{tx.ben.sub}</div>
           </div>
           <div className={`ben-toggle fu d1 ${isV("ben") ? "v" : ""}`}>
-            <button className={`tgl ${role === "worker" ? "on" : ""}`} onClick={() => setRole("worker")}>🎒 For Workers</button>
-            <button className={`tgl ${role === "manager" ? "on" : ""}`} onClick={() => setRole("manager")}>🏢 For Managers</button>
+            <button className={`tgl ${role === "worker" ? "on" : ""}`} onClick={() => setRole("worker")}>{tx.ben.tabW}</button>
+            <button className={`tgl ${role === "manager" ? "on" : ""}`} onClick={() => setRole("manager")}>{tx.ben.tabM}</button>
           </div>
           <div className="ben-grid">
-            {(role === "worker" ? [
-              { icon: "💼", t: "Job on arrival", d: "No more arriving broke. Your position is confirmed before you leave.", bg: "rgba(232,101,74,.12)" },
-              { icon: "⭐", t: "Portable reputation", d: "Ratings and verified skills follow you everywhere. Every swap makes you stronger.", bg: "rgba(229,161,0,.12)" },
-              { icon: "🌏", t: "Explore confidently", d: "New city, no financial risk. You know your schedule, your manager, your role.", bg: "rgba(37,99,235,.12)" },
-              { icon: "🤝", t: "Meet your swap partner", d: "Chat before you swap. Get tips about the city, the job, and the team.", bg: "rgba(27,122,90,.12)" },
-              { icon: "📈", t: "Grow your career", d: "Different environments, new skills, a resume that shows real adaptability.", bg: "rgba(232,101,74,.12)" },
-              { icon: "🔒", t: "Verified & safe", d: "Every business is ABN-verified. Every worker is ID-checked. Real reviews from real managers.", bg: "rgba(37,99,235,.12)" },
-            ] : [
-              { icon: "⚡", t: "Zero downtime", d: "Worker leaves, replacement arrives the same week. No gap in your roster.", bg: "rgba(232,101,74,.12)" },
-              { icon: "✅", t: "Pre-vetted candidates", d: "Verified skills, manager ratings, complete work history — before you approve.", bg: "rgba(27,122,90,.12)" },
-              { icon: "💰", t: "Cut recruitment costs", d: "No job ads, no interviews, no trial shifts. We handle the matching.", bg: "rgba(229,161,0,.12)" },
-              { icon: "📊", t: "Full transparency", d: "Detailed profiles with reliability scores and real comments from previous employers.", bg: "rgba(37,99,235,.12)" },
-              { icon: "🎯", t: "One-click approval", d: "Review the candidate, tap approve. The simplest hiring ever.", bg: "rgba(232,101,74,.12)" },
-              { icon: "🔄", t: "Consistent quality", d: "Workers perform because their rating directly affects future swap opportunities.", bg: "rgba(27,122,90,.12)" },
-            ]).map((b, i) => (
+            {(role === "worker" ? tx.ben.workers : tx.ben.managers).map((b, i) => (
               <div key={`${role}-${i}`} className={`ben-card fu d${(i % 3) + 1} ${isV("ben") ? "v" : ""}`}>
-                <div className="ben-icon" style={{ background: b.bg }}>{b.icon}</div>
+                <div className="ben-icon" style={{ background: (role === "worker" ? WORKER_BGS : MANAGER_BGS)[i] }}>{b.icon}</div>
                 <div className="ben-title">{b.t}</div>
                 <div className="ben-desc">{b.d}</div>
               </div>
@@ -445,9 +557,9 @@ export default function LandingPage({ onViewProfile, onLoginSuccess }) {
       <section className="proof-section" ref={(el) => { observerRefs.current["proof"] = el; }} data-section="proof">
         <div className="proof-inner">
           <div className={`fu ${isV("proof") ? "v" : ""}`}>
-            <div className="slabel">Stories</div>
-            <div className="stitle">Real people, real swaps</div>
-            <div className="ssub">Hear from backpackers and managers who tested the concept.</div>
+            <div className="slabel">{tx.proof.label}</div>
+            <div className="stitle">{tx.proof.title}</div>
+            <div className="ssub">{tx.proof.sub}</div>
           </div>
           <div className="proof-grid">
             {[
@@ -474,11 +586,11 @@ export default function LandingPage({ onViewProfile, onLoginSuccess }) {
         <div className="cta-bg"><img src="https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=1600&q=80" alt="" /><div className="cta-bg-overlay" /></div>
         <div className="cta-inner">
           <div className={`fu ${isV("cta") ? "v" : ""}`}>
-            <div className="cta-title">Pairgo is live</div>
-            <div className="cta-sub">Thousands of workers already swapping across Australia. Your next adventure starts now.</div>
+            <div className="cta-title">{tx.cta.title}</div>
+            <div className="cta-sub">{tx.cta.sub}</div>
           </div>
           <div className={`cta-stats fu d1 ${isV("cta") ? "v" : ""}`}>
-            {[{ val: "2,400+", label: "Workers" }, { val: "340+", label: "Swaps done" }, { val: "6", label: "Cities" }, { val: "4.9★", label: "Avg rating" }].map((s, i) => (
+            {tx.cta.stats.map((s, i) => (
               <div key={i} style={{ textAlign: "center" }}>
                 <div className="cta-stat-val">{s.val}</div>
                 <div className="cta-stat-label">{s.label}</div>

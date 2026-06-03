@@ -29,4 +29,7 @@ export const api = {
 
   // Backpackers (para el Browse del manager)
   getBackpackers: ()         => call('GET',   '/backpackers'),
+
+  // User profile update
+  patchUser: (id, data)      => call('PATCH', `/users/${id}`, data),
 };

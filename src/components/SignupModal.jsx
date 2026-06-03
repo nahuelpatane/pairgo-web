@@ -1,8 +1,17 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, Mail, Lock, MapPin, Briefcase, Building2, ChevronLeft, AlertCircle } from "lucide-react";
+import { X, User, Mail, Lock, MapPin, Briefcase, Building2, ChevronLeft, AlertCircle, FileText } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { CITIES, ROLES, VENUE_TYPES } from "../data/mockData";
+
+const VISA_TYPES = [
+  "Working Holiday 417",
+  "Working Holiday 462",
+  "Student 500",
+  "Graduate 485",
+  "Skilled Worker 482",
+  "Other",
+];
 
 const STEP_VARIANTS = {
   enter: { opacity: 0, x: 40 },
@@ -92,7 +101,7 @@ export default function SignupModal({ onClose, onSuccess, onSwitchToLogin }) {
 
   const [form, setForm] = useState({
     name: "", email: "", password: "",
-    currentCity: "", currentRole: "", targetCity: "",
+    currentCity: "", visaType: "", targetCity: "",
     venueName: "", city: "", venueType: "", roleNeeded: "",
   });
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -249,8 +258,8 @@ export default function SignupModal({ onClose, onSuccess, onSwitchToLogin }) {
 
                   {selectedRole === "backpacker" ? (
                     <>
+                      <SelectInput icon={FileText} value={form.visaType} onChange={(v) => set("visaType", v)} options={VISA_TYPES} placeholder="Visa type" />
                       <SelectInput icon={MapPin} value={form.currentCity} onChange={(v) => set("currentCity", v)} options={CITIES} placeholder="Current city" />
-                      <SelectInput icon={Briefcase} value={form.currentRole} onChange={(v) => set("currentRole", v)} options={ROLES} placeholder="I work as…" />
                       <SelectInput icon={MapPin} value={form.targetCity} onChange={(v) => set("targetCity", v)} options={CITIES.filter((c) => c !== form.currentCity)} placeholder="I want to go to…" />
                     </>
                   ) : (

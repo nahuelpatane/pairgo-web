@@ -126,6 +126,20 @@ app.get('/api/backpackers', (_, res) => {
   res.json(bps);
 });
 
+// ── USERS (profile update) ────────────────────────────────────
+
+app.patch('/api/users/:id', (req, res) => {
+  const db = read();
+  const i = db.users.findIndex(u => u.id === req.params.id);
+  if (i < 0) return res.status(404).json({ error: 'User not found' });
+  // Never allow overwriting identity/auth fields via this endpoint
+  const { password, email, role, id: _id, ...updates } = req.body;
+  db.users[i] = { ...db.users[i], ...updates };
+  write(db);
+  const { password: _, ...safe } = db.users[i];
+  res.json({ user: safe });
+});
+
 // ─────────────────────────────────────────────────────────────
 const PORT = 3001;
 app.listen(PORT, () => {
