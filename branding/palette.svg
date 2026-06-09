@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 740" font-family="'DM Sans', system-ui, sans-serif">
+
+  <!-- Background -->
+  <rect width="900" height="740" fill="#FAFAF7"/>
+
+  <!-- Title -->
+  <text x="40" y="50" font-size="13" font-weight="600" letter-spacing="2" fill="#8A8A82">PAIRGO — COLOR PALETTE</text>
+  <line x1="40" y1="62" x2="860" y2="62" stroke="#E8E8E2" stroke-width="1"/>
+
+  <!-- ── PRIMARY BRAND ──────────────────────────── -->
+  <text x="40" y="92" font-size="11" font-weight="600" letter-spacing="1.5" fill="#8A8A82">PRIMARY BRAND</text>
+
+  <!-- Coral -->
+  <rect x="40" y="104" width="120" height="80" rx="12" fill="#E8654A"/>
+  <text x="100" y="175" font-size="10" fill="rgba(255,255,255,0.7)" text-anchor="middle">--coral</text>
+  <text x="100" y="204" font-size="11" font-weight="600" fill="#1A1A18" text-anchor="middle">#E8654A</text>
+
+  <!-- Coral Deep -->
+  <rect x="172" y="104" width="120" height="80" rx="12" fill="#D4503A"/>
+  <text x="232" y="175" font-size="10" fill="rgba(255,255,255,0.7)" text-anchor="middle">--coral-deep</text>
+  <text x="232" y="204" font-size="11" font-weight="600" fill="#1A1A18" text-anchor="middle">#D4503A</text>
+
+  <!-- Coral Glow -->
+  <rect x="304" y="104" width="120" height="80" rx="12" fill="#FFE8E2" stroke="#F0D0C8" stroke-width="1"/>
+  <text x="364" y="175" font-size="10" fill="#C87060" text-anchor="middle">--coral-glow</text>
+  <text x="364" y="204" font-size="11" font-weight="600" fill="#1A1A18" text-anchor="middle">#FFE8E2</text>
+
+  <!-- ── NEUTRALS ──────────────────────────────── -->
+  <text x="460" y="92" font-size="11" font-weight="600" letter-spacing="1.5" fill="#8A8A82">NEUTRALS</text>
+
+  <rect x="460" y="104" width="80" height="80" rx="12" fill="#1A1A18"/>
+  <text x="500" y="175" font-size="10" fill="rgba(255,255,255,0.5)" text-anchor="middle">--ink</text>
+  <text x="500" y="204" font-size="10" font-weight="600" fill="#1A1A18" text-anchor="middle">#1A1A18</text>
+
+  <rect x="552" y="104" width="80" height="80" rx="12" fill="#4A4A45"/>
+  <text x="592" y="175" font-size="10" fill="rgba(255,255,255,0.5)" text-anchor="middle">--ink-soft</text>
+  <text x="592" y="204" font-size="10" font-weight="600" fill="#1A1A18" text-anchor="middle">#4A4A45</text>
+
+  <rect x="644" y="104" width="80" height="80" rx="12" fill="#8A8A82"/>
+  <text x="684" y="175" font-size="10" fill="rgba(255,255,255,0.6)" text-anchor="middle">--ink-muted</text>
+  <text x="684" y="204" font-size="10" font-weight="600" fill="#1A1A18" text-anchor="middle">#8A8A82</text>
+
+  <rect x="736" y="104" width="80" height="80" rx="12" fill="#FAFAF7" stroke="#E8E8E2" stroke-width="1"/>
+  <text x="776" y="175" font-size="10" fill="#8A8A82" text-anchor="middle">--sand</text>
+  <text x="776" y="204" font-size="10" font-weight="600" fill="#1A1A18" text-anchor="middle">#FAFAF7</text>
+
+  <!-- ── SECONDARY ACCENTS ──────────────────────── -->
+  <text x="40" y="248" font-size="11" font-weight="600" letter-spacing="1.5" fill="#8A8A82">SECONDARY ACCENTS</text>
+
+  <!-- Ocean -->
+  <rect x="40" y="260" width="120" height="80" rx="12" fill="#2563EB"/>
+  <text x="100" y="330" font-size="10" fill="rgba(255,255,255,0.7)" text-anchor="middle">--ocean</text>
+  <text x="100" y="360" font-size="11" font-weight="600" fill="#1A1A18" text-anchor="middle">#2563EB</text>
+
+  <rect x="172" y="260" width="120" height="80" rx="12" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+  <text x="232" y="330" font-size="10" fill="#2563EB" text-anchor="middle">--ocean-soft</text>
+  <text x="232" y="360" font-size="11" font-weight="600" fill="#1A1A18" text-anchor="middle">#EFF6FF</text>
+
+  <!-- Forest -->
+  <rect x="320" y="260" width="120" height="80" rx="12" fill="#1B7A5A"/>
+  <text x="380" y="330" font-size="10" fill="rgba(255,255,255,0.7)" text-anchor="middle">--forest</text>
+  <text x="380" y="360" font-size="11" font-weight="600" fill="#1A1A18" text-anchor="middle">#1B7A5A</text>
+
+  <rect x="452" y="260" width="120" height="80" rx="12" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="512" y="330" font-size="10" fill="#1B7A5A" text-anchor="middle">--forest-soft</text>
+  <text x="512" y="360" font-size="11" font-weight="600" fill="#1A1A18" text-anchor="middle">#ECFDF5</text>
+
+  <!-- Gold -->
+  <rect x="600" y="260" width="120" height="80" rx="12" fill="#E5A100"/>
+  <text x="660" y="330" font-size="10" fill="rgba(255,255,255,0.7)" text-anchor="middle">--gold</text>
+  <text x="660" y="360" font-size="11" font-weight="600" fill="#1A1A18" text-anchor="middle">#E5A100</text>
+
+  <rect x="732" y="260" width="120" height="80" rx="12" fill="#FFF8E1" stroke="#FDE68A" stroke-width="1"/>
+  <text x="792" y="330" font-size="10" fill="#E5A100" text-anchor="middle">--gold-soft</text>
+  <text x="792" y="360" font-size="11" font-weight="600" fill="#1A1A18" text-anchor="middle">#FFF8E1</text>
+
+  <!-- ── STATUS COLORS ──────────────────────────── -->
+  <text x="40" y="404" font-size="11" font-weight="600" letter-spacing="1.5" fill="#8A8A82">STATUS COLORS</text>
+
+  <rect x="40" y="416" width="190" height="48" rx="10" fill="#FEF3C7" stroke="#FDE68A" stroke-width="1"/>
+  <text x="135" y="437" font-size="11" font-weight="600" fill="#92400E" text-anchor="middle">Pending</text>
+  <text x="135" y="454" font-size="10" fill="#92400E" text-anchor="middle">#FEF3C7 · #92400E</text>
+
+  <rect x="242" y="416" width="190" height="48" rx="10" fill="#D1FAE5" stroke="#A7F3D0" stroke-width="1"/>
+  <text x="337" y="437" font-size="11" font-weight="600" fill="#065F46" text-anchor="middle">Active</text>
+  <text x="337" y="454" font-size="10" fill="#065F46" text-anchor="middle">#D1FAE5 · #065F46</text>
+
+  <rect x="444" y="416" width="190" height="48" rx="10" fill="#DBEAFE" stroke="#93C5FD" stroke-width="1"/>
+  <text x="539" y="437" font-size="11" font-weight="600" fill="#1E40AF" text-anchor="middle">Completed</text>
+  <text x="539" y="454" font-size="10" fill="#1E40AF" text-anchor="middle">#DBEAFE · #1E40AF</text>
+
+  <rect x="646" y="416" width="190" height="48" rx="10" fill="#F3F4F6" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="741" y="437" font-size="11" font-weight="600" fill="#6B7280" text-anchor="middle">Declined</text>
+  <text x="741" y="454" font-size="10" fill="#6B7280" text-anchor="middle">#F3F4F6 · #6B7280</text>
+
+  <!-- ── AVATAR PALETTE ─────────────────────────── -->
+  <text x="40" y="512" font-size="11" font-weight="600" letter-spacing="1.5" fill="#8A8A82">AVATAR PALETTE</text>
+  <text x="40" y="528" font-size="10" fill="#8A8A82">Assigned deterministically by user ID (last char % 8)</text>
+
+  <rect x="40"  y="540" width="80" height="52" rx="10" fill="#E8654A"/>
+  <text x="80"  y="571" font-size="10" fill="white" text-anchor="middle" font-weight="600">#E8654A</text>
+
+  <rect x="132" y="540" width="80" height="52" rx="10" fill="#60A5FA"/>
+  <text x="172" y="571" font-size="10" fill="white" text-anchor="middle" font-weight="600">#60A5FA</text>
+
+  <rect x="224" y="540" width="80" height="52" rx="10" fill="#A78BFA"/>
+  <text x="264" y="571" font-size="10" fill="white" text-anchor="middle" font-weight="600">#A78BFA</text>
+
+  <rect x="316" y="540" width="80" height="52" rx="10" fill="#34D399"/>
+  <text x="356" y="571" font-size="10" fill="white" text-anchor="middle" font-weight="600">#34D399</text>
+
+  <rect x="408" y="540" width="80" height="52" rx="10" fill="#F472B6"/>
+  <text x="448" y="571" font-size="10" fill="white" text-anchor="middle" font-weight="600">#F472B6</text>
+
+  <rect x="500" y="540" width="80" height="52" rx="10" fill="#FBBF24"/>
+  <text x="540" y="571" font-size="10" fill="white" text-anchor="middle" font-weight="600">#FBBF24</text>
+
+  <rect x="592" y="540" width="80" height="52" rx="10" fill="#6EE7B7"/>
+  <text x="632" y="571" font-size="10" fill="#1A1A18" text-anchor="middle" font-weight="600">#6EE7B7</text>
+
+  <rect x="684" y="540" width="80" height="52" rx="10" fill="#C084FC"/>
+  <text x="724" y="571" font-size="10" fill="white" text-anchor="middle" font-weight="600">#C084FC</text>
+
+  <!-- ── GRADIENTS ──────────────────────────────── -->
+  <text x="40" y="628" font-size="11" font-weight="600" letter-spacing="1.5" fill="#8A8A82">KEY GRADIENTS</text>
+
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E8654A"/>
+      <stop offset="100%" stop-color="#E5A100"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E8654A"/>
+      <stop offset="100%" stop-color="#A855F7"/>
+    </linearGradient>
+    <linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E8654A"/>
+      <stop offset="100%" stop-color="#D4503A"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="40"  y="640" width="260" height="52" rx="10" fill="url(#g1)"/>
+  <text x="170" y="671" font-size="10" fill="white" text-anchor="middle" font-weight="600">Coral → Gold  (accent bar, hero)</text>
+
+  <rect x="320" y="640" width="260" height="52" rx="10" fill="url(#g2)"/>
+  <text x="450" y="671" font-size="10" fill="white" text-anchor="middle" font-weight="600">Coral → Purple  (alt accent)</text>
+
+  <rect x="600" y="640" width="260" height="52" rx="10" fill="url(#g3)"/>
+  <text x="730" y="671" font-size="10" fill="white" text-anchor="middle" font-weight="600">Coral → Coral-deep  (CTA button)</text>
+
+</svg>

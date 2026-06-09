@@ -27,7 +27,14 @@
       "Bash(git push *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\USER\\\\Desktop\\\\pairgo-web\" -Recurse -Force)",
       "Bash(Select-Object FullName)",
-      "Bash(node -e \"const p=require\\('./node_modules/@react-google-maps/api/package.json'\\); console.log\\(p.version\\)\")"
+      "Bash(node -e \"const p=require\\('./node_modules/@react-google-maps/api/package.json'\\); console.log\\(p.version\\)\")",
+      "Bash(git rm *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\USER\\\\Desktop\\\\pairgo-web\\\\src\" -Recurse -Include \"*.jsx\", \"*.tsx\", \"*.js\", \"*.css\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(grep -E \"^-.*\\\\.\\(jsx|tsx|js|css|json\\)$\")",
+      "PowerShell(New-Item *)",
+      "PowerShell(Copy-Item *)",
+      "Bash(Get-ChildItem -Recurse C:\\\\Users\\\\USER\\\\Desktop\\\\pairgo-web\\\\src -File)"
     ]
   }
 }

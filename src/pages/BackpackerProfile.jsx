@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, Compass, RefreshCw, User, LogOut, Check, X as XIcon, Edit2, Save, Plus, Trash2, Video, Clock, MapPin, ChevronRight, Star, Search } from "lucide-react";
+import { Home, Compass, RefreshCw, User, LogOut, Check, X as XIcon, Edit2, Save, Plus, Trash2, Video, Clock, MapPin, ChevronRight, Star, Search, ArrowLeft, Calendar, Timer, Briefcase, Building2, Camera, Phone, Globe, BadgeCheck } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { CITIES, ROLES, getInitials, getAvatarColor } from "../data/mockData";
 import { api } from "../api";
@@ -8,6 +8,19 @@ import JobsMap from "../components/JobsMap";
 
 // ─── Constants ────────────────────────────────────────────────
 const VISA_TYPES = ["Working Holiday 417","Working Holiday 462","Student 500","Graduate 485","Skilled Worker 482","Other"];
+const NATIONALITIES = ["Australian","Brazilian","British","Canadian","Colombian","French","German","Irish","Italian","Japanese","Korean","Mexican","New Zealander","Portuguese","South African","Spanish","Taiwanese","American","Other"];
+const LANGUAGES_LIST = ["English","Spanish","French","Italian","Portuguese","Japanese","German","Mandarin","Korean","Hindi","Arabic","Dutch","Russian","Swedish","Danish"];
+const CERTS_LIST = [
+  { id:"rsa",        label:"RSA",            full:"Responsible Service of Alcohol" },
+  { id:"rsg",        label:"RSG",            full:"Responsible Service of Gambling" },
+  { id:"food",       label:"Food Safety",    full:"Food Safety Certificate" },
+  { id:"barista",    label:"Barista",        full:"Barista Certificate" },
+  { id:"first_aid",  label:"First Aid",      full:"First Aid Certificate" },
+  { id:"forklift",   label:"Forklift",       full:"Forklift License" },
+  { id:"white_card", label:"White Card",     full:"Construction White Card" },
+  { id:"drivers",    label:"Driver's Lic.",  full:"Driver's License" },
+  { id:"hospitality",label:"Cert III Hosp.", full:"Certificate III in Hospitality" },
+];
 const DAYS       = ["mon","tue","wed","thu","fri","sat","sun"];
 const DAY_LABELS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const SHIFTS     = ["morning","afternoon","night"];
@@ -37,15 +50,38 @@ const DEMO = {
 // ─── Helpers ──────────────────────────────────────────────────
 function calcProgress(u = {}) {
   let s = 0;
-  if (u.currentCity)  s += 10;
-  if (u.targetCity)   s += 10;
-  if (u.visaType)     s += 10;
-  if (u.currentRole)  s += 10;
-  if (u.bio)          s += 10;
-  if (Object.values(u.availability || {}).some(v => v?.length > 0)) s += 15;
-  if ((u.workExperience || []).length > 0) s += 20;
-  if (u.videoUrl)     s += 15;
+  if (u.profilePhoto)  s += 15;
+  if (u.currentCity)   s += 5;
+  if (u.targetCity)    s += 5;
+  if (u.visaType)      s += 8;
+  if (u.currentRole)   s += 8;
+  if (u.phone)         s += 5;
+  if (u.nationality)   s += 4;
+  if ((u.languages||[]).length > 0) s += 5;
+  if (u.bio)           s += 10;
+  if (Object.values(u.availability||{}).some(v=>v?.length>0)) s += 10;
+  if ((u.workExperience||[]).length > 0) s += 15;
+  if (u.videoUrl)      s += 10;
   return Math.min(s, 100);
+}
+
+function resizeImage(file, maxPx = 400) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const ratio = Math.min(maxPx / img.width, maxPx / img.height, 1);
+        const canvas = document.createElement("canvas");
+        canvas.width  = Math.round(img.width  * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function greetingText() {
@@ -91,7 +127,9 @@ function EmptyState({ icon, title, desc, action }) {
 }
 
 // ─── Position Card ────────────────────────────────────────────
-function PositionCard({ position, applied, onApply, compact = false }) {
+function PositionCard({ position, applied, onApply, onView, compact = false }) {
+  const VENUE_EMOJIS = { Restaurant:"🍽️", Café:"☕", Hotel:"🏨", Bar:"🍺", Farm:"🌾", "Tour Operator":"🗺️", "Surf School":"🏄", Retail:"🛍️" };
+  const venueEmoji = VENUE_EMOJIS[position.venueType] || "🏢";
   return (
     <div style={{ background: "#fff", borderRadius: 18, border: "1px solid rgba(0,0,0,.05)", overflow: "hidden", minWidth: compact ? 240 : "auto", flex: compact ? "0 0 auto" : undefined }}>
       <div style={{ height: 3, background: "linear-gradient(90deg, var(--coral), var(--gold))" }} />
@@ -99,7 +137,9 @@ function PositionCard({ position, applied, onApply, compact = false }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
           <div>
             <div style={{ fontFamily: "var(--font-d)", fontSize: compact ? 16 : 18, fontWeight: 700, color: "var(--ink)", marginBottom: 2 }}>{position.role}</div>
-            <div style={{ fontFamily: "var(--font-b)", fontSize: 12, color: "var(--ink-muted)" }}>{position.venueName} · {position.city}</div>
+            <div style={{ fontFamily: "var(--font-b)", fontSize: 12, color: "var(--ink-muted)" }}>
+              {venueEmoji} {position.venueName} · {position.city}
+            </div>
           </div>
           <span style={{ padding: "2px 8px", borderRadius: 100, background: "#d1fae5", border: "1px solid #a7f3d0", fontFamily: "var(--font-b)", fontSize: 10, fontWeight: 700, color: "#065f46" }}>Open</span>
         </div>
@@ -113,14 +153,228 @@ function PositionCard({ position, applied, onApply, compact = false }) {
             {position.description}
           </p>
         )}
-        <button onClick={() => !applied && onApply(position)} disabled={applied}
-          style={{ width: "100%", borderRadius: 100, padding: "9px 16px", fontFamily: "var(--font-b)", fontSize: 13, fontWeight: 600, cursor: applied ? "default" : "pointer", transition: "all .2s", border: applied ? "1.5px solid #a7f3d0" : "none", background: applied ? "#d1fae5" : "var(--coral)", color: applied ? "#065f46" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
-          onMouseEnter={e => { if (!applied) e.currentTarget.style.background = "var(--coral-deep)"; }}
-          onMouseLeave={e => { if (!applied) e.currentTarget.style.background = "var(--coral)"; }}>
-          {applied ? <><Check size={13} /> Applied</> : "Apply Now →"}
-        </button>
+        {compact ? (
+          <button onClick={() => !applied && onApply(position)} disabled={applied}
+            style={{ width: "100%", borderRadius: 100, padding: "9px 16px", fontFamily: "var(--font-b)", fontSize: 13, fontWeight: 600, cursor: applied ? "default" : "pointer", transition: "all .2s", border: applied ? "1.5px solid #a7f3d0" : "none", background: applied ? "#d1fae5" : "var(--coral)", color: applied ? "#065f46" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+            onMouseEnter={e => { if (!applied) e.currentTarget.style.background = "var(--coral-deep)"; }}
+            onMouseLeave={e => { if (!applied) e.currentTarget.style.background = "var(--coral)"; }}>
+            {applied ? <><Check size={13} /> Applied</> : "Apply Now →"}
+          </button>
+        ) : (
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => onView?.(position)}
+              style={{ flex: 1, borderRadius: 100, padding: "9px 14px", fontFamily: "var(--font-b)", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all .2s", border: "1.5px solid rgba(0,0,0,.1)", background: "#fff", color: "var(--ink-soft)", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--coral)"; e.currentTarget.style.color = "var(--coral)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(0,0,0,.1)"; e.currentTarget.style.color = "var(--ink-soft)"; }}>
+              View details
+            </button>
+            <button onClick={() => !applied && onApply(position)} disabled={applied}
+              style={{ flex: 1, borderRadius: 100, padding: "9px 14px", fontFamily: "var(--font-b)", fontSize: 13, fontWeight: 600, cursor: applied ? "default" : "pointer", transition: "all .2s", border: applied ? "1.5px solid #a7f3d0" : "none", background: applied ? "#d1fae5" : "var(--coral)", color: applied ? "#065f46" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
+              onMouseEnter={e => { if (!applied) e.currentTarget.style.background = "var(--coral-deep)"; }}
+              onMouseLeave={e => { if (!applied) e.currentTarget.style.background = "var(--coral)"; }}>
+              {applied ? <><Check size={13} /> Applied</> : "Apply Now →"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+// ─── Job Detail Page ──────────────────────────────────────────
+function JobDetail({ position, applied, onApply, onBack }) {
+  const VENUE_EMOJIS = { Restaurant:"🍽️", Café:"☕", Hotel:"🏨", Bar:"🍺", Farm:"🌾", "Tour Operator":"🗺️", "Surf School":"🏄", Retail:"🛍️" };
+  const venueEmoji = VENUE_EMOJIS[position.venueType] || "🏢";
+  const startDate = position.startDate
+    ? new Date(position.startDate).toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+    : "Flexible";
+  const postedDate = new Date(position.createdAt).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+
+  const INFO_ROWS = [
+    { icon: <span style={{ fontSize: 15 }}>{COMP_ICON[position.compensation]}</span>, label: "Compensation", value: COMP_LABEL[position.compensation] || position.compensation },
+    { icon: <Calendar size={15} color="var(--coral)" />, label: "Start date", value: startDate },
+    { icon: <Timer size={15} color="var(--coral)" />, label: "Duration", value: position.duration },
+    ...(position.venueType ? [{ icon: <Building2 size={15} color="var(--coral)" />, label: "Venue type", value: position.venueType }] : []),
+    { icon: <MapPin size={15} color="var(--coral)" />, label: "Location", value: `${position.city}, Australia` },
+  ];
+
+  return (
+    <motion.div key="job-detail" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.22 }}>
+
+      {/* Back */}
+      <button onClick={onBack}
+        style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "8px 16px 8px 10px", borderRadius: 100, border: "1.5px solid rgba(0,0,0,.1)", background: "#fff", cursor: "pointer", marginBottom: 20, fontFamily: "var(--font-b)", fontSize: 13, fontWeight: 600, color: "var(--ink-soft)", transition: "all .15s" }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--coral)"; e.currentTarget.style.color = "var(--coral)"; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(0,0,0,.1)"; e.currentTarget.style.color = "var(--ink-soft)"; }}>
+        <ArrowLeft size={14} /> Back to results
+      </button>
+
+      {/* Hero card */}
+      <div style={{ background: "#fff", borderRadius: 24, overflow: "hidden", marginBottom: 20, border: "1px solid rgba(0,0,0,.05)", boxShadow: "0 4px 24px rgba(0,0,0,.04)" }}>
+        <div style={{ height: 4, background: "linear-gradient(90deg, var(--coral), var(--gold))" }} />
+        <div style={{ padding: "32px 36px 28px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
+            <span style={{ padding: "3px 11px", borderRadius: 100, background: "#d1fae5", border: "1px solid #a7f3d0", fontFamily: "var(--font-b)", fontSize: 11, fontWeight: 700, color: "#065f46" }}>● Open</span>
+            <span style={{ fontFamily: "var(--font-b)", fontSize: 12, color: "var(--ink-muted)" }}>Posted {postedDate}</span>
+          </div>
+
+          <h1 style={{ fontFamily: "var(--font-d)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 800, color: "var(--ink)", letterSpacing: "-1.5px", lineHeight: 1.08, marginBottom: 14 }}>
+            {position.role}
+          </h1>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,var(--coral),var(--coral-deep))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
+                {venueEmoji}
+              </div>
+              <div>
+                <div style={{ fontFamily: "var(--font-d)", fontSize: 16, fontWeight: 700, color: "var(--ink)" }}>{position.venueName}</div>
+                {position.venueType && <div style={{ fontFamily: "var(--font-b)", fontSize: 12, color: "var(--ink-muted)" }}>{position.venueType}</div>}
+              </div>
+            </div>
+            <span style={{ color: "rgba(0,0,0,.15)" }}>|</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: "var(--font-b)", fontSize: 13, color: "var(--ink-muted)" }}>
+              <MapPin size={13} color="var(--coral)" /> {position.city}, Australia
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 20 }}>
+            <Chip accent>{COMP_ICON[position.compensation]} {COMP_LABEL[position.compensation]}</Chip>
+            <Chip>📅 Starts {new Date(position.startDate).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}</Chip>
+            <Chip>⏱ {position.duration}</Chip>
+            {position.venueType && <Chip>🏢 {position.venueType}</Chip>}
+          </div>
+        </div>
+      </div>
+
+      {/* Two-column layout */}
+      <div className="job-detail-grid" style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 20, alignItems: "start" }}>
+
+        {/* ── Left: main content ── */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+          {/* About this role */}
+          <div className="pcard" style={{ padding: "28px 30px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 9, background: "var(--coral-glow)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Briefcase size={15} color="var(--coral)" />
+              </div>
+              <h2 style={{ fontFamily: "var(--font-d)", fontSize: 18, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.5px" }}>About this role</h2>
+            </div>
+            {position.description ? (
+              <p style={{ fontFamily: "var(--font-b)", fontSize: 14, color: "var(--ink-soft)", lineHeight: 1.8 }}>
+                {position.description}
+              </p>
+            ) : (
+              <p style={{ fontFamily: "var(--font-b)", fontSize: 14, color: "var(--ink-muted)", lineHeight: 1.8, fontStyle: "italic" }}>
+                No description provided. Apply to get in touch with the manager for more details about this position.
+              </p>
+            )}
+          </div>
+
+          {/* Who's hiring */}
+          <div className="pcard" style={{ padding: "28px 30px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 9, background: "var(--coral-glow)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Building2 size={15} color="var(--coral)" />
+              </div>
+              <h2 style={{ fontFamily: "var(--font-d)", fontSize: 18, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.5px" }}>Who's hiring</h2>
+            </div>
+            <div style={{ display: "flex", gap: 18, alignItems: "flex-start" }}>
+              <div style={{ width: 64, height: 64, borderRadius: 18, background: "linear-gradient(135deg,var(--coral),var(--coral-deep))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, flexShrink: 0, boxShadow: "0 4px 16px rgba(232,101,74,.3)" }}>
+                {venueEmoji}
+              </div>
+              <div>
+                <div style={{ fontFamily: "var(--font-d)", fontSize: 20, fontWeight: 800, color: "var(--ink)", letterSpacing: "-0.5px", marginBottom: 4 }}>{position.venueName}</div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {position.venueType && <Chip color="var(--ocean)">{position.venueType}</Chip>}
+                  <Chip><MapPin size={10} /> {position.city}, Australia</Chip>
+                </div>
+                <p style={{ fontFamily: "var(--font-b)", fontSize: 13, color: "var(--ink-muted)", marginTop: 10, lineHeight: 1.6 }}>
+                  This position is managed through Pairgo. After your application is accepted, you'll receive the manager's contact details directly.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Location */}
+          <div className="pcard" style={{ padding: "28px 30px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 9, background: "var(--coral-glow)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <MapPin size={15} color="var(--coral)" />
+              </div>
+              <h2 style={{ fontFamily: "var(--font-d)", fontSize: 18, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.5px" }}>Location</h2>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", background: "linear-gradient(135deg,var(--coral-glow),#fff)", borderRadius: 16, border: "1px solid rgba(232,101,74,.12)" }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--coral)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <MapPin size={20} color="#fff" />
+              </div>
+              <div>
+                <div style={{ fontFamily: "var(--font-d)", fontSize: 18, fontWeight: 700, color: "var(--ink)" }}>{position.city}</div>
+                <div style={{ fontFamily: "var(--font-b)", fontSize: 13, color: "var(--ink-muted)" }}>Australia</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* ── Right: apply sidebar ── */}
+        <div style={{ position: "sticky", top: 24, display: "flex", flexDirection: "column", gap: 14 }}>
+
+          {/* Apply card */}
+          <div className="pcard" style={{ padding: "0", overflow: "hidden" }}>
+            <div style={{ height: 4, background: "linear-gradient(90deg,var(--coral),var(--gold))" }} />
+            <div style={{ padding: "24px 22px" }}>
+
+              {/* Info rows */}
+              <div style={{ marginBottom: 20 }}>
+                {INFO_ROWS.map(({ icon, label, value }) => (
+                  <div key={label} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 0", borderBottom: "1px solid rgba(0,0,0,.05)" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--sand-dark)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+                      {icon}
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: "var(--font-b)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--ink-muted)", marginBottom: 1 }}>{label}</div>
+                      <div style={{ fontFamily: "var(--font-b)", fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>{value}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Apply button */}
+              <button onClick={() => !applied && onApply(position)} disabled={applied}
+                style={{ width: "100%", borderRadius: 100, padding: "13px 16px", fontFamily: "var(--font-b)", fontSize: 14, fontWeight: 700, cursor: applied ? "default" : "pointer", transition: "all .2s", border: applied ? "2px solid #a7f3d0" : "none", background: applied ? "#d1fae5" : "var(--coral)", color: applied ? "#065f46" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: applied ? "none" : "0 4px 20px rgba(232,101,74,.35)" }}
+                onMouseEnter={e => { if (!applied) { e.currentTarget.style.background = "var(--coral-deep)"; e.currentTarget.style.boxShadow = "0 6px 28px rgba(232,101,74,.45)"; }}}
+                onMouseLeave={e => { if (!applied) { e.currentTarget.style.background = "var(--coral)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(232,101,74,.35)"; }}}>
+                {applied ? <><Check size={15} /> Application sent!</> : "Apply Now →"}
+              </button>
+
+              {applied && (
+                <p style={{ fontFamily: "var(--font-b)", fontSize: 11, color: "var(--ink-muted)", textAlign: "center", marginTop: 10, lineHeight: 1.5 }}>
+                  Your application is with the manager. Track it in <strong>My Swaps</strong>.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* How it works */}
+          <div className="pcard" style={{ padding: "20px 22px" }}>
+            <div style={{ fontFamily: "var(--font-b)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, color: "var(--coral)", marginBottom: 14 }}>How it works</div>
+            {[
+              { step: "1", text: "Apply and wait for the manager to review your profile" },
+              { step: "2", text: "If accepted, you'll connect directly to arrange the swap" },
+              { step: "3", text: "Work the swap and earn a verified Pairgo review" },
+            ].map(({ step, text }) => (
+              <div key={step} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 12 }}>
+                <div style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--coral)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-b)", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{step}</div>
+                <p style={{ fontFamily: "var(--font-b)", fontSize: 12, color: "var(--ink-muted)", lineHeight: 1.55 }}>{text}</p>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -189,8 +443,10 @@ export default function BackpackerProfile({ onBack }) {
   const [roleFilter, setRoleFilter]   = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showMap, setShowMap]         = useState(true);
+  const [selectedJob, setSelectedJob] = useState(null);
 
   // Profile editing
+  const photoInputRef                 = useRef(null);
   const [saving, setSaving]           = useState("");
   const [bio, setBio]                 = useState(user?.bio || "");
   const [editBio, setEditBio]         = useState(false);
@@ -203,6 +459,14 @@ export default function BackpackerProfile({ onBack }) {
   const [videoInput, setVideoInput]   = useState(user?.videoUrl || "");
   const [showAddExp, setShowAddExp]   = useState(false);
   const [newExp, setNewExp]           = useState({ role:"", venue:"", city:"", period:"", managerContact:"", description:"" });
+  // New profile fields
+  const [profilePhoto, setProfilePhoto]       = useState(user?.profilePhoto || "");
+  const [photoUploading, setPhotoUploading]   = useState(false);
+  const [phone, setPhone]                     = useState(user?.phone || "");
+  const [nationality, setNationality]         = useState(user?.nationality || "");
+  const [languages, setLanguages]             = useState(user?.languages || []);
+  const [certifications, setCertifications]   = useState(user?.certifications || []);
+  const [editPersonal, setEditPersonal]       = useState(false);
 
   const handleLogout = () => { logout(); onBack(); };
 
@@ -216,6 +480,8 @@ export default function BackpackerProfile({ onBack }) {
   };
   const userInitials    = getInitials(profile.name);
   const userAvatarColor = getAvatarColor(user?.id || "");
+
+  useEffect(() => { setSelectedJob(null); }, [tab]);
 
   useEffect(() => {
     Promise.all([api.getPositions(), api.getRequests()])
@@ -272,6 +538,18 @@ export default function BackpackerProfile({ onBack }) {
   const handleDecline  = (id) => patchReq(id, { status: "declined" });
   const handleComplete = (id) => patchReq(id, { status: "completed" }, "Swap completed! ⭐");
 
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPhotoUploading(true);
+    try {
+      const b64 = await resizeImage(file);
+      setProfilePhoto(b64);
+      await saveSection({ profilePhoto: b64 }, "photo");
+    } catch { showToast("Error uploading photo."); }
+    finally { setPhotoUploading(false); e.target.value = ""; }
+  };
+
   const saveSection = async (data, key) => {
     setSaving(key);
     const result = await updateUser(data);
@@ -281,7 +559,7 @@ export default function BackpackerProfile({ onBack }) {
     return result.success;
   };
 
-  const pct = calcProgress({ ...user, bio, currentRole, visaType, availability, workExperience: workExp, videoUrl });
+  const pct = calcProgress({ ...user, bio, currentRole, visaType, availability, workExperience: workExp, videoUrl, profilePhoto, phone, nationality, languages });
 
   const SELECT = { borderRadius: 10, padding: "8px 28px 8px 10px", background: "#fff", border: "1.5px solid rgba(0,0,0,.1)", fontFamily: "var(--font-b)", fontSize: 13, fontWeight: 500, outline: "none", cursor: "pointer", appearance: "none", color: "var(--ink-soft)" };
 
@@ -314,11 +592,15 @@ export default function BackpackerProfile({ onBack }) {
         .bnav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:100;background:#fff;border-top:1px solid rgba(0,0,0,.07);padding:8px 0 env(safe-area-inset-bottom,8px);}
         .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px;cursor:pointer;border:none;background:transparent;color:var(--ink-muted);font-family:var(--font-b);font-size:10px;font-weight:500;transition:color .2s;}
         .bnav-item.on{color:var(--coral);}
+        .photo-wrap:hover .photo-overlay{opacity:1!important;}
         @media(max-width:768px){
           .sidebar{display:none!important;}
           .main-content{padding:16px 16px 90px!important;}
           .bnav{display:flex!important;}
           .content-inner{max-width:100%!important;}
+          .job-detail-grid{grid-template-columns:1fr!important;}
+          .profile-header-grid{grid-template-columns:1fr!important;}
+          .personal-grid{grid-template-columns:1fr!important;}
         }
       `}</style>
 
@@ -334,8 +616,8 @@ export default function BackpackerProfile({ onBack }) {
         {/* User pill */}
         <div style={{ margin: "16px 16px 8px", padding: "12px 14px", background: "rgba(255,255,255,.05)", borderRadius: 14, border: "1px solid rgba(255,255,255,.07)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: userAvatarColor, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-d)", fontSize: 13, fontWeight: 800, color: "#fff", flexShrink: 0 }}>
-              {userInitials}
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: userAvatarColor, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-d)", fontSize: 13, fontWeight: 800, color: "#fff", flexShrink: 0, overflow: "hidden" }}>
+              {profilePhoto ? <img src={profilePhoto} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : userInitials}
             </div>
             <div style={{ overflow: "hidden" }}>
               <div style={{ fontFamily: "var(--font-b)", fontSize: 13, fontWeight: 600, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{profile.name}</div>
@@ -523,7 +805,7 @@ export default function BackpackerProfile({ onBack }) {
             )}
 
             {/* ═══════════════ EXPLORE ═══════════════ */}
-            {tab === "explore" && (
+            {tab === "explore" && !selectedJob && (
               <motion.div key="explore" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.22 }}>
                 {/* Header */}
                 <div style={{ marginBottom: 24 }}>
@@ -587,11 +869,22 @@ export default function BackpackerProfile({ onBack }) {
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 14, marginBottom: 48 }}>
                     {openPositions.map(pos => (
-                      <PositionCard key={pos.id} position={pos} applied={appliedIds.has(pos.id)} onApply={handleApply} />
+                      <PositionCard key={pos.id} position={pos} applied={appliedIds.has(pos.id)} onApply={handleApply} onView={setSelectedJob} />
                     ))}
                   </div>
                 )}
               </motion.div>
+            )}
+
+            {/* ═══════════════ JOB DETAIL ═══════════════ */}
+            {tab === "explore" && selectedJob && (
+              <JobDetail
+                key={selectedJob.id}
+                position={selectedJob}
+                applied={appliedIds.has(selectedJob.id)}
+                onApply={(pos) => { handleApply(pos); }}
+                onBack={() => setSelectedJob(null)}
+              />
             )}
 
             {/* ═══════════════ MY SWAPS ═══════════════ */}
@@ -629,33 +922,249 @@ export default function BackpackerProfile({ onBack }) {
             {tab === "profile" && (
               <motion.div key="profile" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.22 }}>
 
-                <div style={{ marginBottom: 24 }}>
+                <div style={{ marginBottom: 20 }}>
                   <h1 style={{ fontFamily: "var(--font-d)", fontSize: 28, fontWeight: 800, color: "var(--ink)", letterSpacing: "-1px", marginBottom: 4 }}>My Profile</h1>
                   <p style={{ fontFamily: "var(--font-b)", fontSize: 14, color: "var(--ink-muted)" }}>Keep your profile complete to get more invites from managers</p>
                 </div>
 
-                {/* Progress bar */}
+                {/* ── PROFILE HEADER CARD ── */}
+                <div className="pcard" style={{ padding: "28px 30px", marginBottom: 16, overflow: "hidden" }}>
+                  <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flexWrap: "wrap" }}>
+
+                    {/* Photo */}
+                    <div style={{ position: "relative", flexShrink: 0 }}>
+                      <div className="photo-wrap" style={{ width: 92, height: 92, borderRadius: 24, overflow: "hidden", background: userAvatarColor, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 4px 20px rgba(0,0,0,.14)", position: "relative" }}
+                        onClick={() => photoInputRef.current?.click()}>
+                        {profilePhoto
+                          ? <img src={profilePhoto} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          : <span style={{ fontFamily: "var(--font-d)", fontSize: 30, fontWeight: 800, color: "#fff" }}>{userInitials}</span>
+                        }
+                        <div className="photo-overlay" style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.48)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity .2s", flexDirection: "column", gap: 4 }}>
+                          <Camera size={18} color="#fff" />
+                          <span style={{ fontFamily: "var(--font-b)", fontSize: 10, fontWeight: 700, color: "#fff" }}>{profilePhoto ? "Change" : "Add"}</span>
+                        </div>
+                      </div>
+                      {photoUploading && (
+                        <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,.8)", borderRadius: 24, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <div style={{ width: 22, height: 22, border: "2.5px solid rgba(0,0,0,.1)", borderTopColor: "var(--coral)", borderRadius: "50%", animation: "spin .7s linear infinite" }} />
+                        </div>
+                      )}
+                      <input ref={photoInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePhotoUpload} />
+                    </div>
+
+                    {/* Main info */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
+                        <div>
+                          <h2 style={{ fontFamily: "var(--font-d)", fontSize: 22, fontWeight: 800, color: "var(--ink)", letterSpacing: "-0.5px", marginBottom: 2 }}>{profile.name}</h2>
+                          <p style={{ fontFamily: "var(--font-b)", fontSize: 13, color: "var(--ink-muted)" }}>
+                            {currentRole || <span style={{ fontStyle: "italic" }}>No role set</span>} · {profile.currentCity} → {profile.targetCity}
+                          </p>
+                        </div>
+                        <button onClick={() => photoInputRef.current?.click()}
+                          style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 100, border: "1.5px solid rgba(0,0,0,.1)", background: "#fff", color: "var(--ink-muted)", fontFamily: "var(--font-b)", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--coral)"; e.currentTarget.style.color = "var(--coral)"; }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(0,0,0,.1)"; e.currentTarget.style.color = "var(--ink-muted)"; }}>
+                          <Camera size={11} /> {profilePhoto ? "Change photo" : "Add photo"}
+                        </button>
+                      </div>
+
+                      {/* Quick chips */}
+                      <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 8 }}>
+                        {nationality && <Chip>🌍 {nationality}</Chip>}
+                        {visaType    && <Chip>🛂 {visaType}</Chip>}
+                        {phone       && <Chip>📞 {phone}</Chip>}
+                        {!nationality && !visaType && !phone && (
+                          <span style={{ fontFamily: "var(--font-b)", fontSize: 12, color: "var(--ink-muted)", fontStyle: "italic" }}>Add your personal info below ↓</span>
+                        )}
+                      </div>
+
+                      {/* Languages */}
+                      {languages.length > 0 && (
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          {languages.map(l => <Chip key={l} color="var(--ocean)">🗣 {l}</Chip>)}
+                        </div>
+                      )}
+
+                      {/* Certifications */}
+                      {certifications.length > 0 && (
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                          {certifications.map(c => <Chip key={c} color="var(--forest)">✓ {c}</Chip>)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginTop: 22, paddingTop: 20, borderTop: "1px solid rgba(0,0,0,.06)" }}>
+                    {[
+                      { label: "Applications", value: myRequests.filter(r=>r.initiator==="backpacker").length, icon: "📝", color: "var(--coral)" },
+                      { label: "Active swaps",  value: myRequests.filter(r=>r.status==="active").length,        icon: "✅", color: "var(--forest)" },
+                      { label: "Completed",     value: myRequests.filter(r=>r.status==="completed").length,     icon: "⭐", color: "var(--gold)" },
+                    ].map(s => (
+                      <div key={s.label} style={{ textAlign: "center", padding: "10px 0" }}>
+                        <div style={{ fontFamily: "var(--font-d)", fontSize: 26, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
+                        <div style={{ fontFamily: "var(--font-b)", fontSize: 11, color: "var(--ink-muted)", marginTop: 4 }}>{s.icon} {s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ── PROGRESS BAR ── */}
                 {(() => {
                   const color = pct >= 80 ? "#34d399" : pct >= 50 ? "var(--gold)" : "var(--coral)";
-                  const hint = pct < 30 ? "Add more details to get noticed."
-                    : pct < 60 ? "Add your availability and work experience."
-                    : pct < 100 ? "Almost there! Add a video to stand out." : "Your profile is complete! 🎉";
+                  const hint = pct < 30  ? "Start by adding a photo and your personal info."
+                    : pct < 60  ? "Add your availability and work experience."
+                    : pct < 100 ? "Almost there! Add a video or more details to stand out."
+                    : "Your profile is complete! 🎉";
                   return (
-                    <div className="pcard" style={{ padding: "20px 24px", marginBottom: 20, display: "flex", alignItems: "center", gap: 20 }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                          <span style={{ fontFamily: "var(--font-b)", fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>Profile Completeness</span>
-                          <span style={{ fontFamily: "var(--font-d)", fontSize: 22, fontWeight: 800, color, letterSpacing: "-0.5px" }}>{pct}%</span>
-                        </div>
-                        <div style={{ height: 8, borderRadius: 100, background: "rgba(0,0,0,.07)", overflow: "hidden" }}>
-                          <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.9, ease: [0.16,1,.3,1] }}
-                            style={{ height: "100%", borderRadius: 100, background: `linear-gradient(90deg,${color},${color}bb)` }} />
-                        </div>
-                        <p style={{ fontFamily: "var(--font-b)", fontSize: 12, color: "var(--ink-muted)", marginTop: 8 }}>{hint}</p>
+                    <div className="pcard" style={{ padding: "18px 24px", marginBottom: 16 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <span style={{ fontFamily: "var(--font-b)", fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>Profile completeness</span>
+                        <span style={{ fontFamily: "var(--font-d)", fontSize: 20, fontWeight: 800, color, letterSpacing: "-0.5px" }}>{pct}%</span>
                       </div>
+                      <div style={{ height: 7, borderRadius: 100, background: "rgba(0,0,0,.07)", overflow: "hidden", marginBottom: 7 }}>
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.9, ease: [0.16,1,.3,1] }}
+                          style={{ height: "100%", borderRadius: 100, background: `linear-gradient(90deg,${color},${color}bb)` }} />
+                      </div>
+                      <p style={{ fontFamily: "var(--font-b)", fontSize: 12, color: "var(--ink-muted)" }}>{hint}</p>
                     </div>
                   );
                 })()}
+
+                {/* ── PERSONAL INFO ── */}
+                <div className="pcard" style={{ padding: "24px 28px", marginBottom: 16 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: editPersonal ? 22 : 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 9, background: "var(--coral-glow)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <User size={15} color="var(--coral)" />
+                      </div>
+                      <div style={{ fontFamily: "var(--font-d)", fontSize: 17, fontWeight: 700, color: "var(--ink)" }}>Personal Info</div>
+                    </div>
+                    <button onClick={() => setEditPersonal(b => !b)}
+                      style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 14px", borderRadius: 100, border: "1.5px solid rgba(0,0,0,.1)", background: editPersonal ? "var(--coral)" : "#fff", color: editPersonal ? "#fff" : "var(--ink-muted)", fontFamily: "var(--font-b)", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all .2s" }}>
+                      <Edit2 size={10} /> {editPersonal ? "Cancel" : "Edit"}
+                    </button>
+                  </div>
+
+                  {!editPersonal ? (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginTop: 18 }} className="personal-grid">
+                      {[
+                        { icon: <Phone size={13} color="var(--coral)" />, label: "Phone", value: phone },
+                        { icon: <Globe size={13} color="var(--coral)" />, label: "Nationality", value: nationality },
+                        { icon: <span style={{ fontSize: 13 }}>🛂</span>, label: "Visa type", value: visaType },
+                        { icon: <span style={{ fontSize: 13 }}>📧</span>, label: "Email", value: user?.email },
+                      ].map(({ icon, label, value }) => (
+                        <div key={label}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
+                            {icon}
+                            <span style={{ fontFamily: "var(--font-b)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--ink-muted)" }}>{label}</span>
+                          </div>
+                          <div style={{ fontFamily: "var(--font-b)", fontSize: 14, fontWeight: 600, color: value ? "var(--ink)" : "var(--ink-muted)", fontStyle: value ? "normal" : "italic" }}>
+                            {value || "Not set"}
+                          </div>
+                        </div>
+                      ))}
+                      <div style={{ gridColumn: "1 / -1" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+                          <Globe size={13} color="var(--coral)" />
+                          <span style={{ fontFamily: "var(--font-b)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--ink-muted)" }}>Languages</span>
+                        </div>
+                        {languages.length > 0
+                          ? <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{languages.map(l => <Chip key={l} color="var(--ocean)">🗣 {l}</Chip>)}</div>
+                          : <span style={{ fontFamily: "var(--font-b)", fontSize: 13, color: "var(--ink-muted)", fontStyle: "italic" }}>None added</span>
+                        }
+                      </div>
+                      <div style={{ gridColumn: "1 / -1" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+                          <BadgeCheck size={13} color="var(--coral)" />
+                          <span style={{ fontFamily: "var(--font-b)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--ink-muted)" }}>Certifications & Licenses</span>
+                        </div>
+                        {certifications.length > 0
+                          ? <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{certifications.map(c => <Chip key={c} color="var(--forest)">✓ {c}</Chip>)}</div>
+                          : <span style={{ fontFamily: "var(--font-b)", fontSize: 13, color: "var(--ink-muted)", fontStyle: "italic" }}>None added</span>
+                        }
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+                      {/* Phone + Nationality */}
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }} className="personal-grid">
+                        <div>
+                          <label style={{ fontFamily: "var(--font-b)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--ink-muted)", display: "flex", alignItems: "center", gap: 5, marginBottom: 7 }}>
+                            <Phone size={11} color="var(--coral)" /> Phone
+                          </label>
+                          <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+61 400 000 000" type="tel"
+                            style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid rgba(0,0,0,.1)", fontFamily: "var(--font-b)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                        </div>
+                        <div>
+                          <label style={{ fontFamily: "var(--font-b)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--ink-muted)", display: "flex", alignItems: "center", gap: 5, marginBottom: 7 }}>
+                            <Globe size={11} color="var(--coral)" /> Nationality
+                          </label>
+                          <div style={{ position: "relative" }}>
+                            <select value={nationality} onChange={e => setNationality(e.target.value)} style={{ ...SELECT, width: "100%" }}>
+                              <option value="">— select —</option>
+                              {NATIONALITIES.map(n => <option key={n} value={n}>{n}</option>)}
+                            </select>
+                            <span style={{ position: "absolute", right: 9, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", fontSize: 10, color: "var(--ink-muted)" }}>▾</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Languages */}
+                      <div>
+                        <label style={{ fontFamily: "var(--font-b)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--ink-muted)", display: "flex", alignItems: "center", gap: 5, marginBottom: 10 }}>
+                          <Globe size={11} color="var(--coral)" /> Languages spoken
+                        </label>
+                        <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                          {LANGUAGES_LIST.map(lang => {
+                            const on = languages.includes(lang);
+                            return (
+                              <button key={lang} onClick={() => setLanguages(l => on ? l.filter(x => x !== lang) : [...l, lang])}
+                                style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 13px", borderRadius: 100, border: on ? "none" : "1.5px solid rgba(0,0,0,.1)", background: on ? "#dbeafe" : "#fff", color: on ? "#1e40af" : "var(--ink-muted)", fontFamily: "var(--font-b)", fontSize: 12, fontWeight: on ? 700 : 500, cursor: "pointer", transition: "all .15s" }}>
+                                {on && <Check size={10} strokeWidth={3} />}{lang}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Certifications */}
+                      <div>
+                        <label style={{ fontFamily: "var(--font-b)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--ink-muted)", display: "flex", alignItems: "center", gap: 5, marginBottom: 10 }}>
+                          <BadgeCheck size={11} color="var(--coral)" /> Certifications & Licenses
+                        </label>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(175px, 1fr))", gap: 8 }}>
+                          {CERTS_LIST.map(cert => {
+                            const on = certifications.includes(cert.label);
+                            return (
+                              <button key={cert.id} onClick={() => setCertifications(c => on ? c.filter(x => x !== cert.label) : [...c, cert.label])}
+                                style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 12, border: on ? "1.5px solid #a7f3d0" : "1.5px solid rgba(0,0,0,.09)", background: on ? "#d1fae5" : "#F5F4F0", cursor: "pointer", transition: "all .15s", textAlign: "left" }}>
+                                <div style={{ width: 20, height: 20, borderRadius: 6, background: on ? "var(--forest)" : "rgba(0,0,0,.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background .15s" }}>
+                                  {on && <Check size={11} color="#fff" strokeWidth={3} />}
+                                </div>
+                                <div>
+                                  <div style={{ fontFamily: "var(--font-b)", fontSize: 12, fontWeight: 700, color: on ? "#065f46" : "var(--ink-soft)" }}>{cert.label}</div>
+                                  <div style={{ fontFamily: "var(--font-b)", fontSize: 10, color: "var(--ink-muted)" }}>{cert.full}</div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Save */}
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={async () => { const ok = await saveSection({ phone, nationality, languages, certifications }, "personal"); if (ok) setEditPersonal(false); }} disabled={saving === "personal"}
+                          style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 22px", borderRadius: 100, background: "var(--coral)", color: "#fff", border: "none", fontFamily: "var(--font-b)", fontSize: 13, fontWeight: 600, cursor: "pointer", boxShadow: "0 4px 16px rgba(232,101,74,.3)" }}>
+                          <Save size={13} /> {saving === "personal" ? "Saving…" : "Save changes"}
+                        </button>
+                        <button onClick={() => setEditPersonal(false)} style={{ padding: "10px 16px", borderRadius: 100, border: "1.5px solid rgba(0,0,0,.1)", background: "#fff", color: "var(--ink-muted)", fontFamily: "var(--font-b)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* Swap info + Bio */}
                 <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: 16, marginBottom: 16 }}>

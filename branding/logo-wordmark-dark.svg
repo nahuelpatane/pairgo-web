@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80" font-family="'Fraunces', Georgia, serif">
+  <!-- Usage: on dark backgrounds (#1A1A18, dark photos with overlay) -->
+  <text x="12" y="56"
+    font-size="48"
+    font-weight="800"
+    letter-spacing="-2"
+    fill="white">pair<tspan fill="#E8654A">go</tspan></text>
+</svg>

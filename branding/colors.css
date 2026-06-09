@@ -1,0 +1,60 @@
+/**
+ * PAIRGO — Color Tokens
+ * Source of truth for all brand colors.
+ * Import or reference this file in any design tool.
+ */
+
+:root {
+
+  /* ── Neutrals ─────────────────────────────────── */
+  --ink:        #1A1A18;   /* primary text, dark bg        */
+  --ink-soft:   #4A4A45;   /* secondary text               */
+  --ink-muted:  #8A8A82;   /* placeholder, tertiary text   */
+  --sand:       #FAFAF7;   /* page background (light mode) */
+  --sand-dark:  #F0EFE9;   /* dividers, subtle surfaces    */
+
+  /* ── Brand Coral (primary) ───────────────────── */
+  --coral:      #E8654A;   /* CTAs, highlights, links      */
+  --coral-deep: #D4503A;   /* hover / active state         */
+  --coral-glow: #FFE8E2;   /* tinted backgrounds, badges   */
+
+  /* ── Ocean Blue (secondary) ──────────────────── */
+  --ocean:      #2563EB;   /* info, links                  */
+  --ocean-soft: #EFF6FF;   /* info backgrounds             */
+
+  /* ── Forest Green (tertiary) ─────────────────── */
+  --forest:     #1B7A5A;   /* success, active status       */
+  --forest-soft:#ECFDF5;   /* success backgrounds          */
+
+  /* ── Gold / Amber ────────────────────────────── */
+  --gold:       #E5A100;   /* ratings, progress, accent    */
+  --gold-soft:  #FFF8E1;   /* rating backgrounds           */
+
+  /* ── Semantic Status ─────────────────────────── */
+  --status-pending-text:  #92400E;
+  --status-pending-bg:    #FEF3C7;
+  --status-pending-border:#FDE68A;
+
+  --status-active-text:   #065F46;
+  --status-active-bg:     #D1FAE5;
+  --status-active-border: #A7F3D0;
+
+  --status-done-text:     #1E40AF;
+  --status-done-bg:       #DBEAFE;
+  --status-done-border:   #93C5FD;
+
+  --status-declined-text: #6B7280;
+  --status-declined-bg:   #F3F4F6;
+  --status-declined-border:#D1D5DB;
+
+  /* ── Avatar Palette ──────────────────────────── */
+  /* Assigned deterministically by user ID          */
+  --avatar-1: #E8654A;
+  --avatar-2: #60A5FA;
+  --avatar-3: #A78BFA;
+  --avatar-4: #34D399;
+  --avatar-5: #F472B6;
+  --avatar-6: #FBBF24;
+  --avatar-7: #6EE7B7;
+  --avatar-8: #C084FC;
+}

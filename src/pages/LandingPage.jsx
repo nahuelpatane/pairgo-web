@@ -174,9 +174,7 @@ export default function LandingPage({ onViewProfile, onLoginSuccess }) {
         .nav-logo:hover{opacity:.8;}
         .nav-logo span{color:var(--coral);}
         .nav-logo img{width:34px;height:34px;border-radius:9px;object-fit:cover;}
-        .nav-live{position:absolute;top:-2px;right:-10px;width:6px;height:6px;background:#4ade80;border-radius:50%;box-shadow:0 0 8px rgba(74,222,128,.8);}
-        .nav-live::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:1.5px solid rgba(74,222,128,.4);animation:pulse 2s ease-out infinite;}
-        .nav-links{display:flex;gap:10px;align-items:center;}
+.nav-links{display:flex;gap:10px;align-items:center;}
         .nav-login{display:flex;align-items:center;padding:9px 18px;border:1px solid rgba(255,255,255,.12);border-radius:100px;font-family:var(--font-b);font-size:13px;font-weight:500;color:rgba(255,255,255,.6);background:transparent;cursor:pointer;transition:all .2s;white-space:nowrap;}
         .nav-login:hover{border-color:rgba(255,255,255,.28);color:#fff;background:rgba(255,255,255,.05);}
         .nav-cta{display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,var(--coral),var(--coral-deep))!important;color:#fff!important;padding:9px 20px;border-radius:100px;font-family:var(--font-b)!important;font-size:13px!important;font-weight:600!important;cursor:pointer;border:none;transition:all .25s!important;box-shadow:0 0 20px rgba(232,101,74,.3),inset 0 1px 0 rgba(255,255,255,.15)!important;white-space:nowrap;}
@@ -342,7 +340,6 @@ export default function LandingPage({ onViewProfile, onLoginSuccess }) {
         <div className="nav-logo" style={{ position: "relative" }}>
           <img src="/logo.png" alt="Pairgo logo" />
           pair<span>go</span>
-          <div className="nav-live" />
         </div>
 
         <div className="nav-links">
