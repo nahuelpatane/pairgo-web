@@ -114,9 +114,9 @@ export default function SignupModal({ onClose, onSuccess, onSwitchToLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (!form.name.trim()) { setError("Ingresá tu nombre completo."); return; }
-    if (!form.email.trim()) { setError("Ingresá tu email."); return; }
-    if (form.password.length < 4) { setError("La contraseña debe tener al menos 4 caracteres."); return; }
+    if (!form.name.trim()) { setError("Enter your full name."); return; }
+    if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) { setError("Enter a valid email address."); return; }
+    if (form.password.length < 8) { setError("Password must be at least 8 characters."); return; }
     setLoading(true);
     const result = await signup({ ...form, role: selectedRole });
     setLoading(false);
@@ -252,7 +252,7 @@ export default function SignupModal({ onClose, onSuccess, onSwitchToLogin }) {
                 <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   <TextInput icon={User} value={form.name} onChange={(v) => set("name", v)} placeholder="Full name" />
                   <TextInput icon={Mail} type="email" value={form.email} onChange={(v) => set("email", v)} placeholder="Email address" />
-                  <TextInput icon={Lock} type="password" value={form.password} onChange={(v) => set("password", v)} placeholder="Password (min. 4 characters)" />
+                  <TextInput icon={Lock} type="password" value={form.password} onChange={(v) => set("password", v)} placeholder="Password (min. 8 characters)" />
 
                   <div style={{ height: 1, background: "rgba(255,255,255,.06)", margin: "4px 0" }} />
 

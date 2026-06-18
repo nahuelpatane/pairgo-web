@@ -34,7 +34,17 @@
       "Bash(grep -E \"^-.*\\\\.\\(jsx|tsx|js|css|json\\)$\")",
       "PowerShell(New-Item *)",
       "PowerShell(Copy-Item *)",
-      "Bash(Get-ChildItem -Recurse C:\\\\Users\\\\USER\\\\Desktop\\\\pairgo-web\\\\src -File)"
+      "Bash(Get-ChildItem -Recurse C:\\\\Users\\\\USER\\\\Desktop\\\\pairgo-web\\\\src -File)",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(node -e \"const d=[];process.stdin.on\\('data',c=>d.push\\(c\\)\\);process.stdin.on\\('end',\\(\\)=>{try{const j=JSON.parse\\(Buffer.concat\\(d\\)\\);console.log\\('signup ok, user id:', j.user?.id, ', no password in response:', !j.user?.password\\);}catch\\(e\\){console.log\\('raw:', Buffer.concat\\(d\\).toString\\(\\)\\);}}\\)\")",
+      "Bash(node -e \"const d=[];process.stdin.on\\('data',c=>d.push\\(c\\)\\);process.stdin.on\\('end',\\(\\)=>{const j=JSON.parse\\(Buffer.concat\\(d\\)\\);console.log\\('/me ok:', j.user?.name, '| no password:', !j.user?.password\\);}\\)\")",
+      "Bash(node -e \"const d=[];process.stdin.on\\('data',c=>d.push\\(c\\)\\);process.stdin.on\\('end',\\(\\)=>{const j=JSON.parse\\(Buffer.concat\\(d\\)\\);console.log\\('/me no cookie:', j.error\\);}\\)\")",
+      "Bash(node -e \"const d=[];process.stdin.on\\('data',c=>d.push\\(c\\)\\);process.stdin.on\\('end',\\(\\)=>{const j=JSON.parse\\(Buffer.concat\\(d\\)\\);console.log\\('duplicate email error:', j.error\\);}\\)\")",
+      "Bash(pkill -f \"node server.js\")",
+      "Bash(netstat -ano)",
+      "Bash(taskkill /PID 1276 /F)",
+      "Skill(run)",
+      "Bash(echo \"Started PID $!\")"
     ]
   }
 }

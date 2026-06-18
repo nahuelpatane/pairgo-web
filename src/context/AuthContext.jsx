@@ -1,32 +1,31 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import { api } from "../api";
 
 const AuthContext = createContext({
   user: null,
-  login: async () => ({ success: false, error: "No auth provider" }),
-  signup: async () => ({ success: false, error: "No auth provider" }),
-  logout: () => {},
-  updateUser: async () => ({ success: false, error: "No auth provider" }),
+  loading: true,
+  login: async () => ({ success: false }),
+  signup: async () => ({ success: false }),
+  logout: async () => {},
+  updateUser: async () => ({ success: false }),
 });
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("pairgo_user")) ?? null; }
-    catch { return null; }
-  });
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const persist = (u) => {
-    try { localStorage.setItem("pairgo_user", JSON.stringify(u)); } catch {}
-    setUser(u);
-  };
+  // Restore session from httpOnly cookie on mount
+  useEffect(() => {
+    api.me()
+      .then(({ user }) => setUser(user))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
+  }, []);
 
   const login = async (email, password) => {
-    if (!email || !password || password.length < 4) {
-      return { success: false, error: "Ingresá un email válido y contraseña (mín. 4 caracteres)." };
-    }
     try {
       const { user } = await api.login(email, password);
-      persist(user);
+      setUser(user);
       return { success: true };
     } catch (err) {
       return { success: false, error: err.message };
@@ -36,7 +35,7 @@ export function AuthProvider({ children }) {
   const signup = async (data) => {
     try {
       const { user } = await api.signup(data);
-      persist(user);
+      setUser(user);
       return { success: true };
     } catch (err) {
       return { success: false, error: err.message };
@@ -44,23 +43,23 @@ export function AuthProvider({ children }) {
   };
 
   const updateUser = async (data) => {
-    if (!user?.id) return { success: false, error: "Not logged in." };
+    if (!user?.id) return { success: false, error: 'Not logged in.' };
     try {
       const { user: updated } = await api.patchUser(user.id, data);
-      persist(updated);
+      setUser(updated);
       return { success: true, user: updated };
     } catch (err) {
       return { success: false, error: err.message };
     }
   };
 
-  const logout = () => {
-    try { localStorage.removeItem("pairgo_user"); } catch {}
+  const logout = async () => {
+    await api.logout().catch(() => {});
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
