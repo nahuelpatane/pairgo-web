@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "./context/AuthContext";
 import LandingPage from "./pages/LandingPage";
 import BackpackerProfile from "./pages/BackpackerProfile";
@@ -8,6 +8,14 @@ import AdminPanel from "./pages/AdminPanel";
 export default function App() {
   const { user, loading } = useAuth();
   const [view, setView] = useState("landing");
+  const didInit = useRef(false);
+
+  // Once auth resolves on first load, send authenticated users straight to their profile
+  useEffect(() => {
+    if (loading || didInit.current) return;
+    didInit.current = true;
+    if (user) setView("profile");
+  }, [loading, user]);
 
   // Admin panel — independent from user auth
   if (window.location.pathname === "/admin") {

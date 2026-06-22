@@ -1189,7 +1189,7 @@ export default function BackpackerProfile({ onBack }) {
                             <span style={{ fontSize: 13 }}>{icon}</span>
                             <span style={{ fontSize: 10, opacity: .65, textTransform: "uppercase", letterSpacing: 1 }}>{label}</span>
                           </div>
-                          <select value={val} onChange={e => setter(e.target.value)} onBlur={() => saveSection({ [key]: val }, key)}
+                          <select value={val} onChange={e => { setter(e.target.value); saveSection({ [key]: e.target.value }, key); }}
                             style={{ width: "100%", background: "transparent", border: "none", color: "#fff", fontFamily: "var(--font-b)", fontSize: 13, fontWeight: 600, outline: "none", cursor: "pointer" }}>
                             <option value="" style={{ background: "#333" }}>— not set —</option>
                             {opts.map(o => <option key={o} value={o} style={{ background: "#333" }}>{o}</option>)}

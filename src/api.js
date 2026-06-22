@@ -30,11 +30,37 @@ export const api = {
   createRequest:  (data)      => call('POST',  '/requests', data),
   patchRequest:   (id, data)  => call('PATCH', `/requests/${id}`, data),
 
-  // Backpackers
+  // Backpackers (legacy browse list)
   getBackpackers: ()          => call('GET',   '/backpackers'),
 
   // User profile update
   patchUser: (id, data)       => call('PATCH', `/users/${id}`, data),
+
+  // ── Job Posts ────────────────────────────────────────────────
+  // p: { city?, position?, status?, managerId? }
+  getJobs:    (p = {}) => {
+    const qs = new URLSearchParams(p).toString();
+    return call('GET', `/jobs${qs ? '?' + qs : ''}`);
+  },
+  getMyJobs:  ()              => call('GET',    '/jobs/mine'),
+  getJob:     (id)            => call('GET',    `/jobs/${id}`),
+  createJob:  (data)          => call('POST',   '/jobs', data),
+  updateJob:  (id, data)      => call('PATCH',  `/jobs/${id}`, data),
+  deleteJob:  (id)            => call('DELETE', `/jobs/${id}`),
+
+  // ── Availability Posts ───────────────────────────────────────
+  // POST creates or updates (upsert) — one card per backpacker
+  // Body: { visaStatus?, languages?, currentCity?, targetCity?,
+  //         arrivalDate?, availabilityGrid?, isActive?, introVideoUrl? }
+  getMyAvailability:   ()      => call('GET',  '/availability/me'),
+  upsertAvailability:  (data)  => call('POST', '/availability', data),
+
+  // ── Talents (manager feed) ───────────────────────────────────
+  // p: { city?, sort?: "arrival"|"experience", limit? }
+  getTalents: (p = {}) => {
+    const qs = new URLSearchParams(p).toString();
+    return call('GET', `/talents${qs ? '?' + qs : ''}`);
+  },
 
   // Admin
   adminLogin:      (password) => call('POST',   '/admin/login',       { password }),
