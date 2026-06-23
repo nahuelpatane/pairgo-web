@@ -8,7 +8,12 @@ async function call(method, path, body) {
     headers: { 'Content-Type': 'application/json' },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  const data = await res.json();
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(`Server error (${res.status}). Check that the server is running.`);
+  }
   if (!res.ok) throw new Error(data.error || 'Server error.');
   return data;
 }

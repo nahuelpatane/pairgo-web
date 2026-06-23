@@ -19,7 +19,11 @@ const IS_PROD      = process.env.NODE_ENV === 'production';
 // ── Database ──────────────────────────────────────────────────
 mongoose.connect(MONGODB_URI)
   .then(() => console.log('✅  MongoDB connected'))
-  .catch(err => { console.error('❌  MongoDB error:', err); process.exit(1); });
+  .catch(err => {
+    console.error('❌  MongoDB error:', err.message);
+    if (IS_PROD) process.exit(1);
+    console.warn('⚠️   Running without MongoDB — set MONGODB_URI to enable DB features\n');
+  });
 
 // ── Middleware ────────────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }));
@@ -403,7 +407,7 @@ app.get('/api/talents', requireAuth, requireManager, async (req, res) => {
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'pairgo2026';
 const ADMIN_COOKIE   = 'pairgo_admin';
-const adminLimiter   = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, legacyHeaders: false });
+const adminLimiter   = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, legacyHeaders: false, message: { error: 'Too many attempts, please try again in 15 minutes.' } });
 
 function requireAdmin(req, res, next) {
   const token = req.cookies[ADMIN_COOKIE];

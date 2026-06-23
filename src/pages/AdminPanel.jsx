@@ -8,10 +8,10 @@ const CORAL_D = "#D4503A";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
-function joinedDate(id = "") {
-  const ts = parseInt(id.split("_")[1]);
-  if (!ts) return "—";
-  return new Date(ts).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+function joinedDate(user) {
+  const d = user.createdAt;
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
 }
 
 function userCity(u) {
@@ -452,7 +452,7 @@ export default function AdminPanel() {
                       {/* Joined */}
                       <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                         <span style={{ fontSize: 12, color: "rgba(255,255,255,.35)", fontFamily: FONT }}>
-                          {joinedDate(user.id)}
+                          {joinedDate(user)}
                         </span>
                       </td>
 
