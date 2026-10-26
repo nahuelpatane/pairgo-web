@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, LogOut, Plus, Check, X as XIcon, ArrowRight, Star } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { MOCK_BACKPACKERS, CITIES, ROLES, getInitials, getAvatarColor } from "../data/mockData";
+import { CITIES, ROLES, getInitials, getAvatarColor } from "../data/constants";
 import PostPositionModal from "../components/PostPositionModal";
 import RateWorkerModal from "../components/RateWorkerModal";
 import { api } from "../api";
@@ -141,11 +141,6 @@ function BackpackerCard({ bp, requested, noPositions, onInvite }) {
             <div style={{ fontFamily: "var(--font-d)", fontSize: 16, fontWeight: 700, color: "#fff" }}>
               {bp.name} <span style={{ fontWeight: 400 }}>{bp.flag}</span>
             </div>
-            {bp.isRealUser && (
-              <span style={{ padding: "2px 7px", borderRadius: 100, background: "rgba(74,222,128,.15)", border: "1px solid rgba(74,222,128,.3)", fontFamily: "var(--font-b)", fontSize: 10, fontWeight: 700, color: "#4ade80", letterSpacing: 0.5 }}>
-                LIVE
-              </span>
-            )}
           </div>
           <div style={{ fontFamily: "var(--font-b)", fontSize: 12, color: "rgba(255,255,255,.4)", display: "flex", alignItems: "center", gap: 4 }}>
             {bp.currentCity} <ArrowRight size={11} style={{ flexShrink: 0 }} /> {bp.targetCity}
@@ -308,7 +303,7 @@ export default function ManagerProfile({ onBack }) {
   const [activeTab, setActiveTab] = useState("positions");
   const [positions, setPositions] = useState([]);
   const [requests, setRequests] = useState([]);
-  const [realBackpackers, setRealBackpackers] = useState([]);
+  const [backpackers, setBackpackers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPostModal, setShowPostModal] = useState(false);
   const [rateTarget, setRateTarget] = useState(null);
@@ -330,14 +325,12 @@ export default function ManagerProfile({ onBack }) {
       .then(([pos, reqs, bps]) => {
         setPositions(pos);
         setRequests(reqs);
-        setRealBackpackers(bps);
+        setBackpackers(bps);
       })
       .catch(err => console.error("Error loading data:", err))
       .finally(() => setLoading(false));
   }, []);
 
-  // All backpackers: real registered users first, then mocks
-  const allBackpackers = useMemo(() => [...realBackpackers, ...MOCK_BACKPACKERS], [realBackpackers]);
 
   // Derived data
   const myPositions = positions.filter(p => p.managerId === user?.id);
@@ -407,11 +400,11 @@ export default function ManagerProfile({ onBack }) {
   };
 
   // Filtered backpackers
-  const filteredBPs = useMemo(() => allBackpackers.filter(bp => {
+  const filteredBPs = useMemo(() => backpackers.filter(bp => {
     if (cityFilter !== "all" && bp.currentCity !== cityFilter) return false;
     if (roleFilter !== "all" && !bp.roles.includes(roleFilter)) return false;
     return true;
-  }), [cityFilter, roleFilter, allBackpackers]);
+  }), [cityFilter, roleFilter, backpackers]);
 
   const SELECT_STYLE = {
     borderRadius: 10, padding: "9px 32px 9px 14px",

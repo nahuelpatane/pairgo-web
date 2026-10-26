@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Home, Compass, RefreshCw, User, LogOut, Check, X as XIcon, Edit2, Save, Plus, Trash2, Video, Clock, MapPin, ChevronRight, Star, Search, ArrowLeft, Calendar, Timer, Briefcase, Building2, Camera, Phone, Globe, BadgeCheck } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { CITIES, ROLES, getInitials, getAvatarColor } from "../data/mockData";
+import { CITIES, ROLES, getInitials, getAvatarColor } from "../data/constants";
 import { api } from "../api";
 import JobsMap from "../components/JobsMap";
 

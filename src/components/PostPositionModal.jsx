@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, AlertCircle } from "lucide-react";
-import { ROLES } from "../data/mockData";
+import { ROLES } from "../data/constants";
 
 const DURATIONS = ["1–2 weeks", "2–4 weeks", "1–2 months", "2+ months", "Flexible"];
 const COMPENSATION = [

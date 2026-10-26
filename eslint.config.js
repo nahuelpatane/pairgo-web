@@ -5,8 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  // Legacy prototypes not imported by the app
-  globalIgnores(['dist', 'pairgo-landing*.jsx', 'wireframes.jsx', 'src/PairgoLanding.jsx', 'src/ProfilePage.jsx']),
+  globalIgnores(['dist']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

@@ -1,5 +1,7 @@
 # Pairgo
 
+> **Note:** this is the original product spec. The tech stack, schema and project structure below describe the initial plan (Next.js + Postgres), not the current implementation (React + Express + MongoDB) — see [README.md](README.md) for that. The product concept and MVP phases still apply.
+
 **Job swap platform for backpackers & employers.**
 
 Workers in different cities swap positions — both travel with a guaranteed job on day one. Managers approve every swap with full visibility into verified skills and ratings.

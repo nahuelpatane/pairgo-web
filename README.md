@@ -1,16 +1,38 @@
-# React + Vite
+# Pairgo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Job swap platform for backpackers & employers in Australia. Product vision and roadmap: [PAIRGO_README.md](PAIRGO_README.md).
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Layer    | Technology |
+|----------|-----------|
+| Frontend | React 19 + Vite, Tailwind v4, framer-motion |
+| Backend  | Express 5 (`server.js`) |
+| Database | MongoDB + Mongoose (`models.js`) |
+| Auth     | bcrypt + JWT in httpOnly cookies |
+| Hosting  | Render (Express serves `dist/` in production) |
 
-## React Compiler
+## Setup
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+cp .env.example .env   # fill in MONGODB_URI, JWT_SECRET, ADMIN_PASSWORD, VITE_GOOGLE_MAPS_API_KEY
+npm run dev            # API on :3001 + Vite on :5173 (proxies /api)
+```
 
-## Expanding the ESLint configuration
+## Production
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm run build
+npm start              # NODE_ENV=production — refuses to start without JWT_SECRET and ADMIN_PASSWORD
+```
+
+## Data model
+
+- **User** — `role: backpacker | manager`, profile fields for each role
+- **Position** — opening posted by a manager
+- **SwapRequest** — links a backpacker to a manager's position. Created by either side (`initiator`), status `pending → active → completed` (or `declined`); the manager rates the worker once completed.
+
+## Admin
+
+`/admin` — password from `ADMIN_PASSWORD`. Lists users and basic stats.

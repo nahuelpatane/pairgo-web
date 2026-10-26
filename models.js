@@ -69,37 +69,6 @@ const swapRequestSchema = new Schema({
   rating:       { type: Schema.Types.Mixed, default: null }, // { score, comment, createdAt }
 }, { strict: false, timestamps: true, toJSON: jsonTransform });
 
-// ── JobPost ───────────────────────────────────────────────────
-
-const jobPostSchema = new Schema({
-  managerId:      { type: String, required: true },
-  venueName:      { type: String, required: true },
-  position:       { type: String, required: true },
-  location:       { type: String, required: true },
-  salaryRate:     String,
-  contractType:   { type: String, enum: ['Casual', 'Part-time', 'Full-time'] },
-  scheduleNeeded: Schema.Types.Mixed,
-  description:    String,
-  status:         { type: String, default: 'active' },
-}, { timestamps: true, toJSON: jsonTransform });
-
-// ── AvailabilityPost ──────────────────────────────────────────
-
-const availabilityPostSchema = new Schema({
-  backpackerId:            { type: String, required: true, unique: true },
-  visaStatus:              String,
-  languages:               [String],
-  currentCity:             String,
-  targetCity:              String,
-  arrivalDate:             String,
-  availabilityGrid:        Schema.Types.Mixed,
-  isActive:                { type: Boolean, default: true },
-  introVideoUrl:           String,
-  verifiedExperienceCount: { type: Number, default: 0 },
-}, { timestamps: true, toJSON: jsonTransform });
-
 export const User             = mongoose.model('User',             userSchema);
 export const Position         = mongoose.model('Position',         positionSchema);
 export const SwapRequest      = mongoose.model('SwapRequest',      swapRequestSchema);
-export const JobPost          = mongoose.model('JobPost',          jobPostSchema);
-export const AvailabilityPost = mongoose.model('AvailabilityPost', availabilityPostSchema);

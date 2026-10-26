@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { rateLimit } from 'express-rate-limit';
 import mongoose from 'mongoose';
-import { User, Position, SwapRequest, JobPost, AvailabilityPost } from './models.js';
+import { User, Position, SwapRequest } from './models.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -78,11 +78,6 @@ async function requireAuth(req, res, next) {
 
 function requireManager(req, res, next) {
   if (req.authUser?.role !== 'manager') return res.status(403).json({ error: 'Manager access only.' });
-  next();
-}
-
-function requireBackpacker(req, res, next) {
-  if (req.authUser?.role !== 'backpacker') return res.status(403).json({ error: 'Backpacker access only.' });
   next();
 }
 
@@ -223,7 +218,6 @@ app.get('/api/backpackers', async (_, res) => {
       swapsCompleted:0,
       bio:           obj.bio || 'Backpacker looking for work swaps across Australia.',
       availableFrom: obj.availableFrom || '',
-      isRealUser:    true,
     };
   });
   res.json(bps);
@@ -240,200 +234,6 @@ app.patch('/api/users/:id', requireAuth, async (req, res) => {
   const safe = user.toJSON();
   delete safe.password;
   res.json({ user: safe });
-});
-
-// ── JOB POSTS ─────────────────────────────────────────────────
-
-const VALID_CONTRACTS = ['Casual', 'Part-time', 'Full-time'];
-
-async function enrichJobs(jobs) {
-  const mgrs = await User.find({ _id: { $in: [...new Set(jobs.map(j => j.managerId))] } })
-    .select('name initials avatarColor venueType');
-  const mgrMap = Object.fromEntries(mgrs.map(m => [m._id.toString(), m.toJSON()]));
-  return jobs.map(job => {
-    const j = job.toJSON ? job.toJSON() : job;
-    const mgr = mgrMap[j.managerId] || {};
-    return {
-      ...j,
-      managerName:        mgr.name        || '',
-      managerInitials:    mgr.initials    || '',
-      managerAvatarColor: mgr.avatarColor || '#e8654a',
-      managerVenueType:   mgr.venueType   || '',
-    };
-  });
-}
-
-app.get('/api/jobs', async (req, res) => {
-  const { city, position, status = 'active', managerId } = req.query;
-  const filter = {};
-  if (status !== 'all') filter.status = status;
-  if (managerId) filter.managerId = managerId;
-
-  let jobs = await JobPost.find(filter).sort({ createdAt: -1 });
-
-  if (city) {
-    const q = city.toLowerCase();
-    jobs = jobs.filter(j => j.location.toLowerCase().includes(q));
-  }
-  if (position) {
-    const q = position.toLowerCase();
-    jobs = jobs.filter(j => j.position.toLowerCase().includes(q));
-  }
-
-  res.json(await enrichJobs(jobs));
-});
-
-app.post('/api/jobs', requireAuth, requireManager, async (req, res) => {
-  const { venueName, position, location, salaryRate, contractType, scheduleNeeded, description } = req.body;
-
-  if (!venueName?.trim())  return res.status(400).json({ error: 'venueName is required.' });
-  if (!position?.trim())   return res.status(400).json({ error: 'position is required.' });
-  if (!location?.trim())   return res.status(400).json({ error: 'location is required.' });
-  if (!contractType)       return res.status(400).json({ error: 'contractType is required.' });
-  if (!VALID_CONTRACTS.includes(contractType)) {
-    return res.status(400).json({ error: `contractType must be one of: ${VALID_CONTRACTS.join(', ')}` });
-  }
-
-  const job = await JobPost.create({
-    managerId:      req.authUser.id,
-    venueName:      venueName.trim(),
-    position:       position.trim(),
-    location:       location.trim(),
-    salaryRate:     salaryRate     || '',
-    contractType,
-    scheduleNeeded: scheduleNeeded || {},
-    description:    description    || '',
-  });
-
-  res.status(201).json(job);
-});
-
-// must come before /api/jobs/:id
-app.get('/api/jobs/mine', requireAuth, requireManager, async (req, res) => {
-  const jobs = await JobPost.find({ managerId: req.authUser.id }).sort({ createdAt: -1 });
-  res.json(jobs);
-});
-
-app.get('/api/jobs/:id', async (req, res) => {
-  const job = await JobPost.findById(req.params.id);
-  if (!job) return res.status(404).json({ error: 'Job not found.' });
-  const [enriched] = await enrichJobs([job]);
-  res.json(enriched);
-});
-
-app.patch('/api/jobs/:id', requireAuth, requireManager, async (req, res) => {
-  const job = await JobPost.findById(req.params.id);
-  if (!job) return res.status(404).json({ error: 'Job not found.' });
-  if (job.managerId !== req.authUser.id) return res.status(403).json({ error: 'Forbidden.' });
-
-  const { managerId: _m, id: _id, createdAt: _c, ...updates } = req.body;
-  if (updates.contractType && !VALID_CONTRACTS.includes(updates.contractType)) {
-    return res.status(400).json({ error: `contractType must be one of: ${VALID_CONTRACTS.join(', ')}` });
-  }
-
-  Object.assign(job, updates);
-  await job.save();
-  res.json(job.toJSON());
-});
-
-app.delete('/api/jobs/:id', requireAuth, requireManager, async (req, res) => {
-  const job = await JobPost.findById(req.params.id);
-  if (!job) return res.status(404).json({ error: 'Job not found.' });
-  if (job.managerId !== req.authUser.id) return res.status(403).json({ error: 'Forbidden.' });
-  await job.deleteOne();
-  res.json({ ok: true });
-});
-
-// ── AVAILABILITY POSTS ────────────────────────────────────────
-
-app.get('/api/availability/me', requireAuth, requireBackpacker, async (req, res) => {
-  const card = await AvailabilityPost.findOne({ backpackerId: req.authUser.id });
-  if (!card) return res.status(404).json({ error: 'No availability card yet.' });
-  res.json(card);
-});
-
-app.post('/api/availability', requireAuth, requireBackpacker, async (req, res) => {
-  const u = req.authUser;
-  const existing = await AvailabilityPost.findOne({ backpackerId: u.id });
-
-  const verifiedExperienceCount = await SwapRequest.countDocuments({
-    backpackerId: u.id,
-    status: 'completed',
-  });
-
-  const {
-    visaStatus, languages, currentCity, targetCity,
-    arrivalDate, availabilityGrid, isActive, introVideoUrl,
-  } = req.body;
-
-  const cardData = {
-    backpackerId:     u.id,
-    visaStatus:       visaStatus    ?? existing?.visaStatus    ?? u.visaType    ?? '',
-    languages:        languages     ?? existing?.languages     ?? u.languages   ?? [],
-    currentCity:      currentCity   ?? existing?.currentCity   ?? u.currentCity ?? '',
-    targetCity:       targetCity    ?? existing?.targetCity    ?? u.targetCity  ?? '',
-    arrivalDate:      arrivalDate   ?? existing?.arrivalDate   ?? '',
-    availabilityGrid: availabilityGrid ?? existing?.availabilityGrid ?? u.availability ?? {},
-    isActive:         isActive !== undefined ? Boolean(isActive) : (existing?.isActive ?? true),
-    introVideoUrl:    introVideoUrl ?? existing?.introVideoUrl ?? u.videoUrl    ?? '',
-    verifiedExperienceCount,
-  };
-
-  if (existing) {
-    Object.assign(existing, cardData);
-    await existing.save();
-    return res.status(200).json(existing.toJSON());
-  }
-  const card = await AvailabilityPost.create(cardData);
-  res.status(201).json(card.toJSON());
-});
-
-// ── TALENTS ───────────────────────────────────────────────────
-
-app.get('/api/talents', requireAuth, requireManager, async (req, res) => {
-  const filterCity = ((req.query.city || req.authUser.city || '')).toLowerCase().trim();
-  const sort  = req.query.sort  || 'arrival';
-  const limit = Math.min(parseInt(req.query.limit) || 50, 200);
-
-  let talents = await AvailabilityPost.find({ isActive: true });
-
-  if (filterCity) {
-    talents = talents.filter(a =>
-      (a.currentCity || '').toLowerCase().includes(filterCity) ||
-      (a.targetCity  || '').toLowerCase().includes(filterCity)
-    );
-  }
-
-  const bpIds = talents.map(a => a.backpackerId);
-  const completedAgg = await SwapRequest.aggregate([
-    { $match: { backpackerId: { $in: bpIds }, status: 'completed' } },
-    { $group: { _id: '$backpackerId', count: { $sum: 1 } } },
-  ]);
-  const completedByBP = Object.fromEntries(completedAgg.map(r => [r._id, r.count]));
-
-  if (sort === 'experience') {
-    talents.sort((a, b) => (completedByBP[b.backpackerId] || 0) - (completedByBP[a.backpackerId] || 0));
-  } else {
-    talents.sort((a, b) => {
-      const dA = a.arrivalDate ? new Date(a.arrivalDate).getTime() : Infinity;
-      const dB = b.arrivalDate ? new Date(b.arrivalDate).getTime() : Infinity;
-      if (dA !== dB) return dA - dB;
-      return (completedByBP[b.backpackerId] || 0) - (completedByBP[a.backpackerId] || 0);
-    });
-  }
-
-  const paged = talents.slice(0, limit);
-  const users = await User.find({ _id: { $in: paged.map(a => a.backpackerId) } }).select('-password');
-  const userMap = Object.fromEntries(users.map(u => [u._id.toString(), u.toJSON()]));
-
-  const enriched = paged.map(card => {
-    const c = card.toJSON();
-    const backpacker = userMap[c.backpackerId];
-    if (!backpacker) return null;
-    return { ...c, verifiedExperienceCount: completedByBP[c.backpackerId] || 0, backpacker };
-  }).filter(Boolean);
-
-  res.json(enriched);
 });
 
 // ── ADMIN ─────────────────────────────────────────────────────
@@ -494,21 +294,14 @@ app.patch('/api/admin/users/:id', requireAdmin, async (req, res) => {
 });
 
 app.get('/api/admin/stats', requireAdmin, async (_, res) => {
-  const [
-    totalUsers, backpackers, managers, positions, requests,
-    jobPosts, activeJobPosts, availabilityCards, activeAvailability,
-  ] = await Promise.all([
+  const [totalUsers, backpackers, managers, positions, requests] = await Promise.all([
     User.countDocuments(),
     User.countDocuments({ role: 'backpacker' }),
     User.countDocuments({ role: 'manager' }),
     Position.countDocuments(),
     SwapRequest.countDocuments(),
-    JobPost.countDocuments(),
-    JobPost.countDocuments({ status: 'active' }),
-    AvailabilityPost.countDocuments(),
-    AvailabilityPost.countDocuments({ isActive: true }),
   ]);
-  res.json({ totalUsers, backpackers, managers, positions, requests, jobPosts, activeJobPosts, availabilityCards, activeAvailability });
+  res.json({ totalUsers, backpackers, managers, positions, requests });
 });
 
 // ── STATIC FILES (production) ─────────────────────────────────
