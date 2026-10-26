@@ -210,7 +210,7 @@ export default function AdminPanel() {
       ]);
       setUsers(usersData);
       setStats(statsData);
-    } catch {}
+    } catch (err) { console.error("Admin load failed:", err); }
     setLoadingUsers(false);
   }, []);
 
@@ -233,7 +233,7 @@ export default function AdminPanel() {
       await api.adminDeleteUser(userId);
       setUsers(u => u.filter(x => x.id !== userId));
       setStats(s => s ? { ...s, totalUsers: s.totalUsers - 1, [users.find(u => u.id === userId)?.role === "manager" ? "managers" : "backpackers"]: Math.max(0, s[users.find(u => u.id === userId)?.role === "manager" ? "managers" : "backpackers"] - 1) } : s);
-    } catch {}
+    } catch (err) { alert("Error: " + err.message); }
     setActionLoading(null);
     setConfirmDelete(null);
   };
@@ -250,7 +250,7 @@ export default function AdminPanel() {
         const to = user.role === "backpacker" ? "managers" : "backpackers";
         return { ...s, [from]: Math.max(0, s[from] - 1), [to]: s[to] + 1 };
       });
-    } catch {}
+    } catch (err) { alert("Error: " + err.message); }
     setActionLoading(null);
   };
 

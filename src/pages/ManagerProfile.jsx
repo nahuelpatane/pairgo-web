@@ -182,7 +182,9 @@ function BackpackerCard({ bp, requested, noPositions, onInvite }) {
       <div style={{ fontFamily: "var(--font-b)", fontSize: 12, color: "rgba(255,255,255,.3)", marginBottom: 16 }}>
         Available from{" "}
         <span style={{ color: "rgba(255,255,255,.6)", fontWeight: 600 }}>
-          {new Date(bp.availableFrom).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
+          {bp.availableFrom
+            ? new Date(bp.availableFrom).toLocaleDateString("en-AU", { day: "numeric", month: "short" })
+            : "flexible"}
         </span>
       </div>
 
@@ -345,7 +347,7 @@ export default function ManagerProfile({ onBack }) {
   const completedCount  = myRequests.filter(r => r.status === "completed").length;
   const pendingCount    = myRequests.filter(r => r.status === "pending").length;
   const hasOpenPosition = myPositions.some(p => p.status === "open");
-  const invitedIds      = useMemo(() => new Set(myRequests.map(r => r.backpackerId)), [myRequests]);
+  const invitedIds      = new Set(myRequests.map(r => r.backpackerId));
 
   const requestCountFor = (posId) => myRequests.filter(r => r.positionId === posId).length;
 

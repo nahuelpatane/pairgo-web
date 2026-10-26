@@ -38,6 +38,7 @@ const userSchema = new Schema({
   currentRole:    String,
   availability:   Schema.Types.Mixed,
   videoUrl:       String,
+  workExperience: [Schema.Types.Mixed],
   // manager
   venueName:      String,
   city:           String,
@@ -65,7 +66,7 @@ const swapRequestSchema = new Schema({
   managerId:    String,
   positionId:   String,
   status:       { type: String, default: 'pending' },
-  rating:       { type: Number, default: null },
+  rating:       { type: Schema.Types.Mixed, default: null }, // { score, comment, createdAt }
 }, { strict: false, timestamps: true, toJSON: jsonTransform });
 
 // ── JobPost ───────────────────────────────────────────────────

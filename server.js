@@ -16,6 +16,12 @@ const MONGODB_URI  = process.env.MONGODB_URI  || 'mongodb://localhost:27017/pair
 const COOKIE       = 'pairgo_token';
 const IS_PROD      = process.env.NODE_ENV === 'production';
 
+// Never run production with the hardcoded fallback secrets
+if (IS_PROD && (!process.env.JWT_SECRET || !process.env.ADMIN_PASSWORD)) {
+  console.error('❌  JWT_SECRET and ADMIN_PASSWORD must be set in production.');
+  process.exit(1);
+}
+
 // ── Database ──────────────────────────────────────────────────
 mongoose.connect(MONGODB_URI)
   .then(() => console.log('✅  MongoDB connected'))
@@ -147,31 +153,58 @@ app.get('/api/positions', async (_, res) => {
   res.json(await Position.find().sort({ createdAt: -1 }));
 });
 
-app.post('/api/positions', requireAuth, async (req, res) => {
-  const pos = await Position.create({ status: 'open', ...req.body });
+app.post('/api/positions', requireAuth, requireManager, async (req, res) => {
+  const pos = await Position.create({ ...req.body, status: 'open', managerId: req.authUser.id });
   res.json(pos);
 });
 
-app.patch('/api/positions/:id', requireAuth, async (req, res) => {
-  const pos = await Position.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: false });
+app.patch('/api/positions/:id', requireAuth, requireManager, async (req, res) => {
+  const pos = await Position.findById(req.params.id);
   if (!pos) return res.status(404).json({ error: 'Not found' });
+  if (pos.get('managerId') !== req.authUser.id) return res.status(403).json({ error: 'Forbidden.' });
+
+  const { managerId: _m, _id, id: _i, ...updates } = req.body;
+  pos.set(updates);
+  await pos.save();
   res.json(pos);
 });
 
 // ── REQUESTS ──────────────────────────────────────────────────
 
-app.get('/api/requests', requireAuth, async (_, res) => {
-  res.json(await SwapRequest.find().sort({ createdAt: -1 }));
+// Users only see requests they are part of
+app.get('/api/requests', requireAuth, async (req, res) => {
+  const me = req.authUser.id;
+  res.json(await SwapRequest.find({ $or: [{ managerId: me }, { backpackerId: me }] }).sort({ createdAt: -1 }));
 });
 
 app.post('/api/requests', requireAuth, async (req, res) => {
-  const r = await SwapRequest.create({ status: 'pending', rating: null, ...req.body });
+  const me = req.authUser;
+  // The caller is always one side of the request — never let them create it on someone else's behalf
+  const sides = me.role === 'manager'
+    ? { managerId: me.id, initiator: 'manager' }
+    : { backpackerId: me.id, initiator: 'backpacker' };
+  const r = await SwapRequest.create({ ...req.body, ...sides, status: 'pending', rating: null });
   res.json(r);
 });
 
+const REQUEST_STATUSES = ['pending', 'active', 'declined', 'completed'];
+
 app.patch('/api/requests/:id', requireAuth, async (req, res) => {
-  const r = await SwapRequest.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: false });
+  const r = await SwapRequest.findById(req.params.id);
   if (!r) return res.status(404).json({ error: 'Not found' });
+  const me = req.authUser.id;
+  if (r.managerId !== me && r.backpackerId !== me) return res.status(403).json({ error: 'Forbidden.' });
+
+  const { status, rating } = req.body;
+  if (status !== undefined) {
+    if (!REQUEST_STATUSES.includes(status)) return res.status(400).json({ error: 'Invalid status.' });
+    r.status = status;
+  }
+  if (rating !== undefined) {
+    if (r.managerId !== me) return res.status(403).json({ error: 'Only the manager can rate.' });
+    r.rating = rating;
+  }
+  await r.save();
   res.json(r);
 });
 
@@ -201,7 +234,7 @@ app.get('/api/backpackers', async (_, res) => {
 app.patch('/api/users/:id', requireAuth, async (req, res) => {
   if (req.authUser.id !== req.params.id) return res.status(403).json({ error: 'Forbidden.' });
 
-  const { password, email, role, id: _id, ...updates } = req.body;
+  const { password: _p, email: _e, role: _r, id: _id, ...updates } = req.body;
   const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: false });
   if (!user) return res.status(404).json({ error: 'User not found' });
   const safe = user.toJSON();
@@ -485,7 +518,7 @@ if (IS_PROD) {
 }
 
 // ── Global error handler ──────────────────────────────────────
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   console.error(err);
   res.status(500).json({ error: 'Internal server error.' });
 });
@@ -494,5 +527,5 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`\n🚀  Pairgo API  →  http://localhost:${PORT}`);
-  if (!IS_PROD) console.log(`⚠️   JWT_SECRET: using dev default — set JWT_SECRET env var in production\n`);
+  if (!process.env.JWT_SECRET) console.log(`⚠️   JWT_SECRET: using dev default — set JWT_SECRET env var in production\n`);
 });
