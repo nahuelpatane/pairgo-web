@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { rateLimit } from 'express-rate-limit';
 import mongoose from 'mongoose';
-import { User, Position, SwapRequest, Employment } from './models.js';
+import { User, Position, SwapRequest, Employment, Swap, OPEN_SWAP_STATUSES } from './models.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -283,6 +283,221 @@ app.patch('/api/employment/:id', requireAuth, async (req, res) => {
   res.json(link);
 });
 
+// ── SWAPS ─────────────────────────────────────────────────────
+
+// What another worker may see of a swap partner. Contact details only once the swap is confirmed.
+const PUBLIC_WORKER_FIELDS = 'name initials avatarColor profilePhoto currentRole nationality visaType languages bio certifications workExperience videoUrl currentCity targetCity availableFrom';
+const CONTACT_FIELDS = ['email', 'phone'];
+const CONTACT_VISIBLE = ['confirmed', 'active', 'completed'];
+const COMMITTED_SWAP = ['accepted', 'confirmed', 'active'];
+
+const activeJobOf = (workerId) => Employment.findOne({ workerId, status: 'active' });
+const swapOf = (workerId) => ({ $or: [{ 'a.workerId': workerId }, { 'b.workerId': workerId }] });
+
+async function withPeople(swaps) {
+  const ids = [...new Set(swaps.flatMap(s => [s.a.workerId, s.b.workerId]))];
+  const users = await User.find({ _id: { $in: ids } }).select(`${PUBLIC_WORKER_FIELDS} ${CONTACT_FIELDS.join(' ')}`);
+  const byId = Object.fromEntries(users.map(u => [u._id.toString(), u.toJSON()]));
+  return swaps.map(s => {
+    const json = s.toJSON();
+    for (const side of ['a', 'b']) {
+      const worker = { ...(byId[s[side].workerId] || { name: 'Deleted user' }) };
+      if (!CONTACT_VISIBLE.includes(s.status)) CONTACT_FIELDS.forEach(f => delete worker[f]);
+      json[side].worker = worker;
+    }
+    return json;
+  });
+}
+
+// Workers who are a mirror of me: same role, working in the city I want, wanting to come to mine.
+app.get('/api/swaps/matches', requireAuth, async (req, res) => {
+  const me = req.authUser;
+  if (me.role !== 'backpacker') return res.status(403).json({ error: 'Only workers have swap matches.' });
+
+  const job = await activeJobOf(me.id);
+  if (!job) return res.json({ eligible: false, reason: 'not_verified', matches: [] });
+  if (!me.targetCity || me.targetCity === job.city) return res.json({ eligible: false, reason: 'no_target', job, matches: [] });
+
+  const theirJobs = await Employment.find({ status: 'active', role: job.role, city: me.targetCity, workerId: { $ne: me.id } });
+  const users = await User.find({
+    _id: { $in: theirJobs.map(j => j.workerId) }, role: 'backpacker', lookingForSwap: true, targetCity: job.city,
+  }).select(PUBLIC_WORKER_FIELDS);
+  const jobByWorker = Object.fromEntries(theirJobs.map(j => [j.workerId, j]));
+
+  const openSwaps = await Swap.find({ status: { $in: OPEN_SWAP_STATUSES }, ...swapOf(me.id) });
+  const swapWith = (id) => openSwaps.find(s => s.a.workerId === id || s.b.workerId === id);
+
+  res.json({
+    eligible: true, job, targetCity: me.targetCity, lookingForSwap: !!me.lookingForSwap,
+    matches: users.map(u => {
+      const id = u._id.toString();
+      const j = jobByWorker[id];
+      const s = swapWith(id);
+      return {
+        worker: u.toJSON(),
+        job: { role: j.role, venueName: j.venueName, city: j.city, startDate: j.startDate },
+        swap: s ? { id: s.id, status: s.status } : null,
+      };
+    }),
+  });
+});
+
+app.get('/api/swaps', requireAuth, async (req, res) => {
+  const me = req.authUser;
+  const query = me.role === 'manager'
+    // managers only get involved once both workers agreed
+    ? { $or: [{ 'a.managerId': me.id }, { 'b.managerId': me.id }], 'history.status': 'accepted' }
+    : swapOf(me.id);
+  res.json(await withPeople(await Swap.find(query).sort({ updatedAt: -1 })));
+});
+
+app.post('/api/swaps', requireAuth, async (req, res) => {
+  const me = req.authUser;
+  if (me.role !== 'backpacker') return res.status(403).json({ error: 'Only workers can propose swaps.' });
+
+  const { workerId, startDate, message } = req.body;
+  if (!mongoose.isValidObjectId(workerId) || workerId === me.id) return res.status(400).json({ error: 'Invalid worker.' });
+
+  const [myJob, otherJob, other] = await Promise.all([
+    activeJobOf(me.id), activeJobOf(workerId), User.findOne({ _id: workerId, role: 'backpacker' }),
+  ]);
+  if (!myJob)    return res.status(409).json({ error: 'You need a verified current job to swap.' });
+  if (!other || !otherJob) return res.status(409).json({ error: 'That worker is not verified at a job.' });
+  if (!other.lookingForSwap) return res.status(409).json({ error: 'That worker is not looking for a swap right now.' });
+  if (otherJob.role !== myJob.role) return res.status(409).json({ error: 'You can only swap with someone in the same role.' });
+  if (me.targetCity !== otherJob.city || other.targetCity !== myJob.city) {
+    return res.status(409).json({ error: 'Your cities do not match for a swap.' });
+  }
+
+  const existing = await Swap.findOne({
+    status: { $in: OPEN_SWAP_STATUSES },
+    $or: [{ 'a.workerId': me.id, 'b.workerId': workerId }, { 'a.workerId': workerId, 'b.workerId': me.id }],
+  });
+  if (existing) return res.status(409).json({ error: 'You already have an open swap with this worker.' });
+
+  const busy = await Swap.findOne({ status: { $in: COMMITTED_SWAP }, $or: [...swapOf(me.id).$or, ...swapOf(workerId).$or] });
+  if (busy) return res.status(409).json({ error: 'One of you is already committed to another swap.' });
+
+  const side = (job) => ({ workerId: job.workerId, managerId: job.managerId, employmentId: job.id, venueName: job.venueName, city: job.city });
+  const swap = await Swap.create({
+    a: side(myJob), b: side(otherJob), role: myJob.role,
+    startDate: startDate || '', message: (message || '').slice(0, 500),
+    history: [{ status: 'proposed', by: me.id }],
+  });
+  res.json((await withPeople([swap]))[0]);
+});
+
+// action → which participants may do it, from which statuses
+const SWAP_ACTIONS = {
+  accept:   { by: ['workerB'],                from: ['proposed'] },
+  decline:  { by: ['workerB'],                from: ['proposed'] },
+  cancel:   { by: ['workerA', 'workerB'],     from: ['proposed', 'accepted', 'confirmed'] },
+  approve:  { by: ['managerA', 'managerB'],   from: ['accepted'] },
+  reject:   { by: ['managerA', 'managerB'],   from: ['accepted'] },
+  start:    { by: ['managerA', 'managerB'],   from: ['confirmed'] },
+  complete: { by: ['managerA', 'managerB'],   from: ['active'] },
+};
+
+// Atomic status change: only applies if the swap is still in one of `from` (guards double clicks / races)
+const moveSwap = (id, from, status, by, extraSet = {}) => Swap.findOneAndUpdate(
+  { _id: id, status: { $in: from } },
+  { $set: { status, ...extraSet }, $push: { history: { status, by, at: new Date() } } },
+  { returnDocument: 'after' },
+);
+
+const jobsStillActive = async (swap) =>
+  (await Employment.countDocuments({ _id: { $in: [swap.a.employmentId, swap.b.employmentId] }, status: 'active' })) === 2;
+
+app.patch('/api/swaps/:id', requireAuth, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: 'Not found' });
+  const swap = await Swap.findById(req.params.id);
+  if (!swap) return res.status(404).json({ error: 'Not found' });
+
+  const me = req.authUser.id;
+  const roles = [
+    swap.a.workerId === me && 'workerA', swap.b.workerId === me && 'workerB',
+    swap.a.managerId === me && 'managerA', swap.b.managerId === me && 'managerB',
+  ].filter(Boolean);
+  if (!roles.length) return res.status(403).json({ error: 'Forbidden.' });
+
+  const { action } = req.body;
+  const rule = SWAP_ACTIONS[action];
+  if (!rule) return res.status(400).json({ error: 'Invalid action.' });
+  if (!rule.by.some(r => roles.includes(r))) return res.status(403).json({ error: 'You cannot do that.' });
+  // the proposer withdraws a proposal; the receiver declines it
+  if (action === 'cancel' && swap.status === 'proposed' && !roles.includes('workerA')) {
+    return res.status(403).json({ error: 'Decline the proposal instead.' });
+  }
+  if (!rule.from.includes(swap.status)) return res.status(409).json({ error: `Cannot ${action}: this swap is ${swap.status}.` });
+
+  let updated;
+  switch (action) {
+    case 'accept': {
+      if (!(await jobsStillActive(swap))) return res.status(409).json({ error: 'One of the jobs is no longer active.' });
+      const busy = await Swap.findOne({
+        _id: { $ne: swap._id }, status: { $in: COMMITTED_SWAP },
+        $or: [...swapOf(swap.a.workerId).$or, ...swapOf(swap.b.workerId).$or],
+      });
+      if (busy) return res.status(409).json({ error: 'One of you is already committed to another swap.' });
+      updated = await moveSwap(swap._id, ['proposed'], 'accepted', me);
+      if (updated) {
+        // both workers are now committed: withdraw their other pending proposals
+        await Swap.updateMany(
+          { _id: { $ne: swap._id }, status: 'proposed', $or: [...swapOf(swap.a.workerId).$or, ...swapOf(swap.b.workerId).$or] },
+          { $set: { status: 'cancelled' }, $push: { history: { status: 'cancelled', by: 'system', at: new Date() } } },
+        );
+      }
+      break;
+    }
+    case 'approve': {
+      const set = {};
+      if (roles.includes('managerA')) set['a.approval'] = true;
+      if (roles.includes('managerB')) set['b.approval'] = true;
+      updated = await Swap.findOneAndUpdate({ _id: swap._id, status: 'accepted' }, { $set: set }, { returnDocument: 'after' });
+      if (updated?.a.approval && updated?.b.approval) {
+        // atomic: only the request that sees both approvals confirms it
+        updated = await Swap.findOneAndUpdate(
+          { _id: swap._id, status: 'accepted', 'a.approval': true, 'b.approval': true },
+          { $set: { status: 'confirmed' }, $push: { history: { status: 'confirmed', by: me, at: new Date() } } },
+          { returnDocument: 'after' },
+        ) || await Swap.findById(swap._id);
+      }
+      break;
+    }
+    case 'reject': {
+      const set = {};
+      if (roles.includes('managerA')) set['a.approval'] = false;
+      if (roles.includes('managerB')) set['b.approval'] = false;
+      updated = await moveSwap(swap._id, ['accepted'], 'rejected', me, set);
+      break;
+    }
+    case 'start': {
+      if (!(await jobsStillActive(swap))) return res.status(409).json({ error: 'One of the jobs is no longer active.' });
+      updated = await moveSwap(swap._id, ['confirmed'], 'active', me);
+      if (updated) {
+        // the workers trade places: old jobs end, each starts verified at the other venue
+        const now = new Date();
+        await Employment.updateMany({ _id: { $in: [swap.a.employmentId, swap.b.employmentId] } }, { $set: { status: 'ended', endedAt: now } });
+        const month = now.toISOString().slice(0, 7);
+        await Employment.create([
+          { workerId: swap.a.workerId, managerId: swap.b.managerId, role: swap.role, venueName: swap.b.venueName, city: swap.b.city, startDate: month, status: 'active', confirmedAt: now },
+          { workerId: swap.b.workerId, managerId: swap.a.managerId, role: swap.role, venueName: swap.a.venueName, city: swap.a.city, startDate: month, status: 'active', confirmedAt: now },
+        ]);
+        await User.updateOne({ _id: swap.a.workerId }, { $set: { currentCity: swap.b.city, lookingForSwap: false }, $unset: { targetCity: 1 } });
+        await User.updateOne({ _id: swap.b.workerId }, { $set: { currentCity: swap.a.city, lookingForSwap: false }, $unset: { targetCity: 1 } });
+      }
+      break;
+    }
+    default: {
+      const to = { decline: 'declined', cancel: 'cancelled', complete: 'completed' }[action];
+      updated = await moveSwap(swap._id, rule.from, to, me);
+    }
+  }
+
+  if (!updated) return res.status(409).json({ error: 'This swap changed in the meantime. Refresh and try again.' });
+  res.json((await withPeople([updated]))[0]);
+});
+
 // ── BACKPACKERS ───────────────────────────────────────────────
 
 app.get('/api/backpackers', async (_, res) => {
@@ -313,7 +528,7 @@ app.patch('/api/users/:id', requireAuth, async (req, res) => {
   if (req.authUser.id !== req.params.id) return res.status(403).json({ error: 'Forbidden.' });
 
   const { password: _p, email: _e, role: _r, id: _id, ...updates } = req.body;
-  const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: false });
+  const user = await User.findByIdAndUpdate(req.params.id, updates, { returnDocument: 'after', runValidators: false });
   if (!user) return res.status(404).json({ error: 'User not found' });
   const safe = user.toJSON();
   delete safe.password;
@@ -365,13 +580,18 @@ app.delete('/api/admin/users/:id', requireAdmin, async (req, res) => {
   const user = await User.findByIdAndDelete(req.params.id);
   if (!user) return res.status(404).json({ error: 'User not found.' });
   await Employment.deleteMany({ $or: [{ workerId: req.params.id }, { managerId: req.params.id }] });
+  const id = req.params.id;
+  await Swap.updateMany(
+    { status: { $in: OPEN_SWAP_STATUSES }, $or: [{ 'a.workerId': id }, { 'b.workerId': id }, { 'a.managerId': id }, { 'b.managerId': id }] },
+    { $set: { status: 'cancelled' }, $push: { history: { status: 'cancelled', by: 'system', at: new Date() } } },
+  );
   res.json({ ok: true });
 });
 
 app.patch('/api/admin/users/:id', requireAdmin, async (req, res) => {
   const allowed = ['role', 'name', 'email'];
   const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
-  const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true });
+  const user = await User.findByIdAndUpdate(req.params.id, updates, { returnDocument: 'after' });
   if (!user) return res.status(404).json({ error: 'User not found.' });
   const safe = user.toJSON();
   delete safe.password;

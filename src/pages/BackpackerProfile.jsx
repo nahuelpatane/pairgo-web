@@ -6,6 +6,7 @@ import { CITIES, ROLES, getInitials, getAvatarColor } from "../data/constants";
 import { api } from "../api";
 import JobsMap from "../components/JobsMap";
 import CurrentJobCard from "../components/CurrentJobCard";
+import SwapsPanel from "../components/SwapsPanel";
 
 // ─── Constants ────────────────────────────────────────────────
 const VISA_TYPES = ["Working Holiday 417","Working Holiday 462","Student 500","Graduate 485","Skilled Worker 482","Other"];
@@ -436,6 +437,7 @@ export default function BackpackerProfile({ onBack }) {
   const [tab, setTab] = useState("home");
   const [positions, setPositions] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [swaps, setSwaps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
 
@@ -485,8 +487,8 @@ export default function BackpackerProfile({ onBack }) {
   useEffect(() => { setSelectedJob(null); }, [tab]);
 
   useEffect(() => {
-    Promise.all([api.getPositions(), api.getRequests()])
-      .then(([pos, reqs]) => { setPositions(pos); setRequests(reqs); })
+    Promise.all([api.getPositions(), api.getRequests(), api.getSwaps()])
+      .then(([pos, reqs, sw]) => { setPositions(pos); setRequests(reqs); setSwaps(sw); })
       .catch(err => console.error("Error loading data:", err))
       .finally(() => setLoading(false));
   }, []);
@@ -494,6 +496,7 @@ export default function BackpackerProfile({ onBack }) {
   const myRequests   = useMemo(() => requests.filter(r => r.backpackerId === user?.id), [requests, user]);
   const appliedIds   = useMemo(() => new Set(myRequests.filter(r => r.initiator === "backpacker").map(r => r.positionId)), [myRequests]);
   const pendingInvites = myRequests.filter(r => r.initiator === "manager" && r.status === "pending").length;
+  const incomingSwaps  = swaps.filter(s => s.status === "proposed" && s.b.workerId === user?.id).length;
 
   const openPositions = useMemo(() => positions.filter(p => {
     if (p.status !== "open") return false;
@@ -567,7 +570,7 @@ export default function BackpackerProfile({ onBack }) {
   const NAV_ITEMS = [
     { id: "home",    icon: Home,      label: "Home"     },
     { id: "explore", icon: Compass,   label: "Explore"  },
-    { id: "swaps",   icon: RefreshCw, label: "My Swaps", badge: pendingInvites },
+    { id: "swaps",   icon: RefreshCw, label: "My Swaps", badge: pendingInvites + incomingSwaps },
     { id: "profile", icon: User,      label: "Profile"  },
   ];
 
@@ -894,7 +897,16 @@ export default function BackpackerProfile({ onBack }) {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
                   <div>
                     <h1 style={{ fontFamily: "var(--font-d)", fontSize: 28, fontWeight: 800, color: "var(--ink)", letterSpacing: "-1px", marginBottom: 4 }}>My Swaps</h1>
-                    <p style={{ fontFamily: "var(--font-b)", fontSize: 14, color: "var(--ink-muted)" }}>Your applications, invites and active work swaps</p>
+                    <p style={{ fontFamily: "var(--font-b)", fontSize: 14, color: "var(--ink-muted)" }}>Trade jobs with a verified worker in the city you want to go to</p>
+                  </div>
+                </div>
+
+                <SwapsPanel swaps={swaps} setSwaps={setSwaps} onToast={showToast} onGoProfile={() => setTab("profile")} />
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                  <div>
+                    <h2 style={{ fontFamily: "var(--font-d)", fontSize: 18, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.4px", marginBottom: 2 }}>Applications & invites</h2>
+                    <p style={{ fontFamily: "var(--font-b)", fontSize: 13, color: "var(--ink-muted)" }}>Open positions you applied to and manager invites</p>
                   </div>
                   {pendingInvites > 0 && (
                     <span style={{ padding: "5px 14px", borderRadius: 100, background: "#fef3c7", border: "1px solid #fde68a", fontFamily: "var(--font-b)", fontSize: 12, fontWeight: 700, color: "#92400e" }}>
@@ -903,7 +915,7 @@ export default function BackpackerProfile({ onBack }) {
                   )}
                 </div>
                 {myRequests.length === 0 ? (
-                  <EmptyState icon="🔄" title="No swaps yet" desc="Apply to open positions or wait for manager invites."
+                  <EmptyState icon="📝" title="No applications yet" desc="Apply to open positions or wait for manager invites."
                     action={
                       <button onClick={() => setTab("explore")} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "var(--coral)", color: "#fff", border: "none", borderRadius: 100, padding: "11px 20px", fontFamily: "var(--font-b)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
                         Browse jobs →

@@ -41,6 +41,12 @@ export const api = {
   createEmployment: (data)       => call('POST',  '/employment', data),
   employmentAction: (id, action) => call('PATCH', `/employment/${id}`, { action }),
 
+  // Swaps between two verified workers
+  getSwapMatches: ()             => call('GET',   '/swaps/matches'),
+  getSwaps:       ()             => call('GET',   '/swaps'),
+  createSwap:     (data)         => call('POST',  '/swaps', data),
+  swapAction:     (id, action)   => call('PATCH', `/swaps/${id}`, { action }),
+
   // Backpackers (browse list)
   getBackpackers: ()          => call('GET',   '/backpackers'),
 

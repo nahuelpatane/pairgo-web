@@ -8,8 +8,11 @@ const jsonTransform = {
   virtuals: true,
   versionKey: false,
   transform: (_, ret) => {
-    ret.id = ret._id.toString();
-    delete ret._id;
+    // subdocuments declared with { _id: false } have no _id
+    if (ret._id) {
+      ret.id = ret._id.toString();
+      delete ret._id;
+    }
     return ret;
   },
 };
@@ -44,6 +47,7 @@ const userSchema = new Schema({
   city:           String,
   venueType:      String,
   roleNeeded:     String,
+  lookingForSwap: { type: Boolean, default: false },
 }, { timestamps: true, toJSON: jsonTransform });
 
 userSchema.pre('save', function () {
@@ -88,7 +92,42 @@ const employmentSchema = new Schema({
   endedAt:     Date,
 }, { timestamps: true, toJSON: jsonTransform });
 
+// ── Swap ──────────────────────────────────────────────────────
+// Two verified workers in different cities trade jobs. A proposes, B accepts,
+// then both managers must approve before it is confirmed.
+//
+// proposed → accepted → confirmed → active → completed
+//          ↘ declined  ↘ rejected / cancelled
+
+export const SWAP_STATUSES = ['proposed', 'accepted', 'confirmed', 'active', 'completed', 'declined', 'rejected', 'cancelled'];
+export const OPEN_SWAP_STATUSES = ['proposed', 'accepted', 'confirmed', 'active'];
+
+const swapSideSchema = new Schema({
+  workerId:     { type: String, required: true },
+  managerId:    { type: String, required: true },
+  employmentId: { type: String, required: true },
+  venueName:    String,
+  city:         String,
+  approval:     { type: Boolean, default: null }, // manager decision: null = pending
+}, { _id: false });
+
+const swapSchema = new Schema({
+  a:         { type: swapSideSchema, required: true }, // proposer
+  b:         { type: swapSideSchema, required: true },
+  role:      { type: String, required: true },
+  startDate: String,
+  message:   { type: String, maxlength: 500 },
+  status:    { type: String, enum: SWAP_STATUSES, default: 'proposed', index: true },
+  history:   [{ _id: false, status: String, by: String, at: { type: Date, default: Date.now } }],
+}, { timestamps: true, toJSON: jsonTransform });
+
+swapSchema.index({ 'a.workerId': 1 });
+swapSchema.index({ 'b.workerId': 1 });
+swapSchema.index({ 'a.managerId': 1 });
+swapSchema.index({ 'b.managerId': 1 });
+
 export const User             = mongoose.model('User',             userSchema);
+export const Swap             = mongoose.model('Swap',             swapSchema);
 export const Employment       = mongoose.model('Employment',       employmentSchema);
 export const Position         = mongoose.model('Position',         positionSchema);
 export const SwapRequest      = mongoose.model('SwapRequest',      swapRequestSchema);

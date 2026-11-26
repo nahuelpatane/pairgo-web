@@ -6,6 +6,7 @@ import { CITIES, ROLES, getInitials, getAvatarColor } from "../data/constants";
 import PostPositionModal from "../components/PostPositionModal";
 import RateWorkerModal from "../components/RateWorkerModal";
 import TeamPanel from "../components/TeamPanel";
+import SwapApprovals from "../components/SwapApprovals";
 import { api } from "../api";
 
 const COMP_LABEL = {
@@ -48,18 +49,19 @@ const STATUS_STYLE = {
 };
 
 // --- Tab bar ---
-function TabBar({ active, onChange, pendingCount, teamPendingCount }) {
+function TabBar({ active, onChange, pendingCount, teamPendingCount, swapPendingCount }) {
   const tabs = [
     { id: "positions", label: "My Positions" },
     { id: "browse",    label: "Browse Workers" },
     { id: "requests",  label: "Requests", badge: pendingCount },
+    { id: "swaps",     label: "Job Swaps", badge: swapPendingCount },
     { id: "team",      label: "My Team",  badge: teamPendingCount },
   ];
   return (
-    <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,.04)", padding: 4, borderRadius: 14, marginBottom: 28 }}>
+    <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,.04)", padding: 4, borderRadius: 14, marginBottom: 28, overflowX: "auto" }}>
       {tabs.map(t => (
         <button key={t.id} onClick={() => onChange(t.id)}
-          style={{ flex: 1, position: "relative", padding: "10px 12px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "var(--font-b)", fontSize: 13, fontWeight: 600, transition: "all .2s", background: active === t.id ? "rgba(255,255,255,.1)" : "transparent", color: active === t.id ? "#fff" : "rgba(255,255,255,.4)" }}>
+          style={{ flex: "1 0 auto", whiteSpace: "nowrap", position: "relative", padding: "10px 22px 10px 12px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "var(--font-b)", fontSize: 13, fontWeight: 600, transition: "all .2s", background: active === t.id ? "rgba(255,255,255,.1)" : "transparent", color: active === t.id ? "#fff" : "rgba(255,255,255,.4)" }}>
           {t.label}
           {t.badge > 0 && (
             <span style={{ position: "absolute", top: 5, right: 8, width: 18, height: 18, borderRadius: "50%", background: "var(--coral)", fontSize: 11, fontWeight: 700, color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
@@ -307,6 +309,7 @@ export default function ManagerProfile({ onBack }) {
   const [requests, setRequests] = useState([]);
   const [backpackers, setBackpackers] = useState([]);
   const [team, setTeam] = useState([]);
+  const [swaps, setSwaps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPostModal, setShowPostModal] = useState(false);
   const [rateTarget, setRateTarget] = useState(null);
@@ -324,12 +327,13 @@ export default function ManagerProfile({ onBack }) {
 
   // Load all data from API on mount
   useEffect(() => {
-    Promise.all([api.getPositions(), api.getRequests(), api.getBackpackers(), api.getEmployment()])
-      .then(([pos, reqs, bps, emp]) => {
+    Promise.all([api.getPositions(), api.getRequests(), api.getBackpackers(), api.getEmployment(), api.getSwaps()])
+      .then(([pos, reqs, bps, emp, sw]) => {
         setPositions(pos);
         setRequests(reqs);
         setBackpackers(bps);
         setTeam(emp);
+        setSwaps(sw);
       })
       .catch(err => console.error("Error loading data:", err))
       .finally(() => setLoading(false));
@@ -404,6 +408,21 @@ export default function ManagerProfile({ onBack }) {
     } catch (err) { showToast("Error: " + err.message); }
   };
   const teamPendingCount = team.filter(l => l.status === "pending").length;
+
+  const SWAP_TOASTS = { approve: "Swap approved ✓", reject: "Swap rejected", start: "Swap started — your team is updated", complete: "Swap completed" };
+  const handleSwapAction = async (id, action) => {
+    try {
+      const updated = await api.swapAction(id, action);
+      setSwaps(prev => prev.map(s => s.id === id ? updated : s));
+      showToast(SWAP_TOASTS[action]);
+      if (action === "start") setTeam(await api.getEmployment()); // workers traded places
+    } catch (err) { showToast("Error: " + err.message); }
+  };
+  const swapPendingCount = swaps.filter(s => {
+    if (s.status !== "accepted") return false;
+    const side = s.a.managerId === user?.id ? s.a : s.b;
+    return side.approval === null;
+  }).length;
 
   const handleApprove  = (id) => patchReq(id, { status: "active" },    "Swap accepted!");
   const handleDecline  = (id) => patchReq(id, { status: "declined" });
@@ -514,7 +533,7 @@ export default function ManagerProfile({ onBack }) {
 
         {/* Tab bar */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.35 }}>
-          <TabBar active={activeTab} onChange={setActiveTab} pendingCount={pendingCount} teamPendingCount={teamPendingCount} />
+          <TabBar active={activeTab} onChange={setActiveTab} pendingCount={pendingCount} teamPendingCount={teamPendingCount} swapPendingCount={swapPendingCount} />
         </motion.div>
 
         {/* Tab content */}
@@ -625,6 +644,13 @@ export default function ManagerProfile({ onBack }) {
                   ))}
                 </div>
               )}
+            </motion.div>
+          )}
+
+          {/* ---- JOB SWAPS ---- */}
+          {activeTab === "swaps" && (
+            <motion.div key="swaps" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.22 }}>
+              <SwapApprovals swaps={swaps} me={user?.id} onAction={handleSwapAction} />
             </motion.div>
           )}
 
