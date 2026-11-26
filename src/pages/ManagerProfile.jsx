@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, LogOut, Plus, Check, X as XIcon, ArrowRight, Star } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { CITIES, ROLES, getInitials, getAvatarColor } from "../data/constants";
 import PostPositionModal from "../components/PostPositionModal";
 import RateWorkerModal from "../components/RateWorkerModal";

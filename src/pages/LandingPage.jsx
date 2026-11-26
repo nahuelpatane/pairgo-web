@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowUpRight, Globe } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import LoginModal from "../components/LoginModal";
 import SignupModal from "../components/SignupModal";
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, User, Mail, Lock, MapPin, Briefcase, Building2, ChevronLeft, AlertCircle, FileText } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { CITIES, ROLES, VENUE_TYPES } from "../data/constants";
 
 const VISA_TYPES = [

@@ -189,7 +189,7 @@ export default function AdminPanel() {
   const [stats, setStats] = useState(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all"); // all | backpacker | manager
-  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(null); // userId pending confirm
   const [actionLoading, setActionLoading] = useState(null); // userId with pending action
 
@@ -201,22 +201,24 @@ export default function AdminPanel() {
       .finally(() => setChecking(false));
   }, []);
 
-  const loadData = useCallback(async () => {
+  const fetchData = useCallback(() =>
+    Promise.all([api.adminGetUsers(), api.adminGetStats()])
+      .then(([usersData, statsData]) => {
+        setUsers(usersData);
+        setStats(statsData);
+      })
+      .catch((err) => console.error("Admin load failed:", err))
+      .finally(() => setLoadingUsers(false)),
+  []);
+
+  const loadData = () => {
     setLoadingUsers(true);
-    try {
-      const [usersData, statsData] = await Promise.all([
-        api.adminGetUsers(),
-        api.adminGetStats(),
-      ]);
-      setUsers(usersData);
-      setStats(statsData);
-    } catch (err) { console.error("Admin load failed:", err); }
-    setLoadingUsers(false);
-  }, []);
+    fetchData();
+  };
 
   useEffect(() => {
-    if (authed) loadData();
-  }, [authed, loadData]);
+    if (authed) fetchData();
+  }, [authed, fetchData]);
 
   const handleLogout = async () => {
     await api.adminLogout().catch(() => {});
@@ -273,7 +275,7 @@ export default function AdminPanel() {
   }
 
   if (!authed) {
-    return <AdminLogin onSuccess={() => { setAuthed(true); }} />;
+    return <AdminLogin onSuccess={() => { setLoadingUsers(true); setAuthed(true); }} />;
   }
 
   // ── Render: dashboard ─────────────────────────────────────────────────

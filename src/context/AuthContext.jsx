@@ -1,14 +1,6 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { api } from "../api";
-
-const AuthContext = createContext({
-  user: null,
-  loading: true,
-  login: async () => ({ success: false }),
-  signup: async () => ({ success: false }),
-  logout: async () => {},
-  updateUser: async () => ({ success: false }),
-});
+import { AuthContext } from "./useAuth";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -64,5 +56,3 @@ export function AuthProvider({ children }) {
     </AuthContext.Provider>
   );
 }
-
-export const useAuth = () => useContext(AuthContext);
