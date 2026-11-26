@@ -69,6 +69,26 @@ const swapRequestSchema = new Schema({
   rating:       { type: Schema.Types.Mixed, default: null }, // { score, comment, createdAt }
 }, { strict: false, timestamps: true, toJSON: jsonTransform });
 
+// ── Employment ────────────────────────────────────────────────
+// Links a worker to the venue they currently work at. The manager confirms it,
+// which is what makes the worker "verified" and eligible for swaps.
+
+export const EMPLOYMENT_STATUSES = ['pending', 'active', 'rejected', 'cancelled', 'ended'];
+
+const employmentSchema = new Schema({
+  workerId:  { type: String, required: true, index: true },
+  managerId: { type: String, required: true, index: true },
+  role:      { type: String, required: true, trim: true },
+  startDate: String,
+  // snapshot of the venue at the time of linking
+  venueName: String,
+  city:      String,
+  status:    { type: String, enum: EMPLOYMENT_STATUSES, default: 'pending' },
+  confirmedAt: Date,
+  endedAt:     Date,
+}, { timestamps: true, toJSON: jsonTransform });
+
 export const User             = mongoose.model('User',             userSchema);
+export const Employment       = mongoose.model('Employment',       employmentSchema);
 export const Position         = mongoose.model('Position',         positionSchema);
 export const SwapRequest      = mongoose.model('SwapRequest',      swapRequestSchema);

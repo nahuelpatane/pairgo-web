@@ -5,6 +5,7 @@ import { useAuth } from "../context/useAuth";
 import { CITIES, ROLES, getInitials, getAvatarColor } from "../data/constants";
 import PostPositionModal from "../components/PostPositionModal";
 import RateWorkerModal from "../components/RateWorkerModal";
+import TeamPanel from "../components/TeamPanel";
 import { api } from "../api";
 
 const COMP_LABEL = {
@@ -47,11 +48,12 @@ const STATUS_STYLE = {
 };
 
 // --- Tab bar ---
-function TabBar({ active, onChange, pendingCount }) {
+function TabBar({ active, onChange, pendingCount, teamPendingCount }) {
   const tabs = [
     { id: "positions", label: "My Positions" },
     { id: "browse",    label: "Browse Workers" },
     { id: "requests",  label: "Requests", badge: pendingCount },
+    { id: "team",      label: "My Team",  badge: teamPendingCount },
   ];
   return (
     <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,.04)", padding: 4, borderRadius: 14, marginBottom: 28 }}>
@@ -304,6 +306,7 @@ export default function ManagerProfile({ onBack }) {
   const [positions, setPositions] = useState([]);
   const [requests, setRequests] = useState([]);
   const [backpackers, setBackpackers] = useState([]);
+  const [team, setTeam] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPostModal, setShowPostModal] = useState(false);
   const [rateTarget, setRateTarget] = useState(null);
@@ -321,11 +324,12 @@ export default function ManagerProfile({ onBack }) {
 
   // Load all data from API on mount
   useEffect(() => {
-    Promise.all([api.getPositions(), api.getRequests(), api.getBackpackers()])
-      .then(([pos, reqs, bps]) => {
+    Promise.all([api.getPositions(), api.getRequests(), api.getBackpackers(), api.getEmployment()])
+      .then(([pos, reqs, bps, emp]) => {
         setPositions(pos);
         setRequests(reqs);
         setBackpackers(bps);
+        setTeam(emp);
       })
       .catch(err => console.error("Error loading data:", err))
       .finally(() => setLoading(false));
@@ -389,6 +393,17 @@ export default function ManagerProfile({ onBack }) {
       if (toastMsg) showToast(toastMsg);
     } catch (err) { showToast("Error: " + err.message); }
   };
+
+  const TEAM_TOASTS = { confirm: "Worker verified ✓", reject: "Request declined", end: "Removed from your team" };
+  const handleTeamAction = async (id, action) => {
+    try {
+      const updated = await api.employmentAction(id, action);
+      // keep the worker info the list endpoint attached
+      setTeam(prev => prev.map(l => l.id === id ? { ...l, ...updated } : l));
+      showToast(TEAM_TOASTS[action]);
+    } catch (err) { showToast("Error: " + err.message); }
+  };
+  const teamPendingCount = team.filter(l => l.status === "pending").length;
 
   const handleApprove  = (id) => patchReq(id, { status: "active" },    "Swap accepted!");
   const handleDecline  = (id) => patchReq(id, { status: "declined" });
@@ -499,7 +514,7 @@ export default function ManagerProfile({ onBack }) {
 
         {/* Tab bar */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.35 }}>
-          <TabBar active={activeTab} onChange={setActiveTab} pendingCount={pendingCount} />
+          <TabBar active={activeTab} onChange={setActiveTab} pendingCount={pendingCount} teamPendingCount={teamPendingCount} />
         </motion.div>
 
         {/* Tab content */}
@@ -610,6 +625,13 @@ export default function ManagerProfile({ onBack }) {
                   ))}
                 </div>
               )}
+            </motion.div>
+          )}
+
+          {/* ---- MY TEAM ---- */}
+          {activeTab === "team" && (
+            <motion.div key="team" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.22 }}>
+              <TeamPanel links={team} onAction={handleTeamAction} />
             </motion.div>
           )}
 

@@ -5,6 +5,7 @@ import { useAuth } from "../context/useAuth";
 import { CITIES, ROLES, getInitials, getAvatarColor } from "../data/constants";
 import { api } from "../api";
 import JobsMap from "../components/JobsMap";
+import CurrentJobCard from "../components/CurrentJobCard";
 
 // ─── Constants ────────────────────────────────────────────────
 const VISA_TYPES = ["Working Holiday 417","Working Holiday 462","Student 500","Graduate 485","Skilled Worker 482","Other"];
@@ -1031,6 +1032,9 @@ export default function BackpackerProfile({ onBack }) {
                     </div>
                   );
                 })()}
+
+                {/* ── CURRENT JOB (verified by manager) ── */}
+                <CurrentJobCard defaultRole={currentRole} onToast={showToast} />
 
                 {/* ── PERSONAL INFO ── */}
                 <div className="pcard" style={{ padding: "24px 28px", marginBottom: 16 }}>

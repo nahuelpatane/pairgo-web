@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { rateLimit } from 'express-rate-limit';
 import mongoose from 'mongoose';
-import { User, Position, SwapRequest } from './models.js';
+import { User, Position, SwapRequest, Employment } from './models.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -203,16 +203,100 @@ app.patch('/api/requests/:id', requireAuth, async (req, res) => {
   res.json(r);
 });
 
+// ── VENUES ────────────────────────────────────────────────────
+
+// Public list of venues (managers) so workers can pick where they currently work
+app.get('/api/venues', async (_, res) => {
+  const managers = await User.find({ role: 'manager', venueName: { $nin: [null, ''] } })
+    .select('name venueName city venueType').sort({ venueName: 1 });
+  res.json(managers.map(m => ({
+    managerId: m._id.toString(), managerName: m.name,
+    venueName: m.venueName, city: m.city || '', venueType: m.venueType || '',
+  })));
+});
+
+// ── EMPLOYMENT ────────────────────────────────────────────────
+
+const OPEN_EMPLOYMENT = ['pending', 'active'];
+const WORKER_FIELDS = 'name email initials avatarColor profilePhoto currentRole nationality visaType';
+
+// Worker: their own links. Manager: their team (with worker info attached).
+app.get('/api/employment', requireAuth, async (req, res) => {
+  const me = req.authUser;
+  if (me.role === 'backpacker') {
+    return res.json(await Employment.find({ workerId: me.id }).sort({ createdAt: -1 }));
+  }
+  const links = await Employment.find({ managerId: me.id }).sort({ createdAt: -1 });
+  const workers = await User.find({ _id: { $in: links.map(l => l.workerId) } }).select(WORKER_FIELDS);
+  const byId = Object.fromEntries(workers.map(w => [w._id.toString(), w.toJSON()]));
+  res.json(links.map(l => ({ ...l.toJSON(), worker: byId[l.workerId] || null })));
+});
+
+app.post('/api/employment', requireAuth, async (req, res) => {
+  const me = req.authUser;
+  if (me.role !== 'backpacker') return res.status(403).json({ error: 'Only workers can link to a venue.' });
+
+  const { managerId, role, startDate } = req.body;
+  if (!managerId || !role?.trim()) return res.status(400).json({ error: 'Venue and role are required.' });
+  if (!mongoose.isValidObjectId(managerId)) return res.status(400).json({ error: 'Invalid venue.' });
+
+  const manager = await User.findOne({ _id: managerId, role: 'manager' });
+  if (!manager) return res.status(404).json({ error: 'Venue not found.' });
+
+  // One current job at a time
+  const open = await Employment.findOne({ workerId: me.id, status: { $in: OPEN_EMPLOYMENT } });
+  if (open) return res.status(409).json({ error: 'You already have a current job. End it or cancel the pending request first.' });
+
+  const link = await Employment.create({
+    workerId: me.id, managerId, role: role.trim(), startDate: startDate || '',
+    venueName: manager.venueName || manager.name, city: manager.city || '',
+  });
+  res.json(link);
+});
+
+// action → { who may do it, from which status, to which status }
+const EMPLOYMENT_ACTIONS = {
+  confirm: { by: 'manager', from: ['pending'],         to: 'active' },
+  reject:  { by: 'manager', from: ['pending'],         to: 'rejected' },
+  cancel:  { by: 'worker',  from: ['pending'],         to: 'cancelled' },
+  end:     { by: 'either',  from: ['active'],          to: 'ended' },
+};
+
+app.patch('/api/employment/:id', requireAuth, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: 'Not found' });
+  const link = await Employment.findById(req.params.id);
+  if (!link) return res.status(404).json({ error: 'Not found' });
+
+  const me = req.authUser.id;
+  const side = link.managerId === me ? 'manager' : link.workerId === me ? 'worker' : null;
+  if (!side) return res.status(403).json({ error: 'Forbidden.' });
+
+  const rule = EMPLOYMENT_ACTIONS[req.body.action];
+  if (!rule) return res.status(400).json({ error: 'Invalid action.' });
+  if (rule.by !== 'either' && rule.by !== side) return res.status(403).json({ error: 'You cannot do that.' });
+  if (!rule.from.includes(link.status)) return res.status(409).json({ error: `Cannot ${req.body.action}: this job is ${link.status}.` });
+
+  link.status = rule.to;
+  if (rule.to === 'active') link.confirmedAt = new Date();
+  if (rule.to === 'ended')  link.endedAt = new Date();
+  await link.save();
+  res.json(link);
+});
+
 // ── BACKPACKERS ───────────────────────────────────────────────
 
 app.get('/api/backpackers', async (_, res) => {
   const users = await User.find({ role: 'backpacker' }).select('-password');
+  const verifiedIds = new Set(
+    (await Employment.find({ status: 'active', workerId: { $in: users.map(u => u._id.toString()) } }).select('workerId'))
+      .map(e => e.workerId)
+  );
   const bps = users.map(u => {
     const obj = u.toJSON();
     return {
       ...obj,
       roles:         [obj.currentRole].filter(Boolean),
-      verified:      false,
+      verified:      verifiedIds.has(obj.id),
       rating:        0,
       reviewCount:   0,
       swapsCompleted:0,
@@ -280,6 +364,7 @@ app.get('/api/admin/users', requireAdmin, async (_, res) => {
 app.delete('/api/admin/users/:id', requireAdmin, async (req, res) => {
   const user = await User.findByIdAndDelete(req.params.id);
   if (!user) return res.status(404).json({ error: 'User not found.' });
+  await Employment.deleteMany({ $or: [{ workerId: req.params.id }, { managerId: req.params.id }] });
   res.json({ ok: true });
 });
 

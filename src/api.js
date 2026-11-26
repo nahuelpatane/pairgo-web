@@ -35,6 +35,12 @@ export const api = {
   createRequest:  (data)      => call('POST',  '/requests', data),
   patchRequest:   (id, data)  => call('PATCH', `/requests/${id}`, data),
 
+  // Venues + employment (current job, verified by the manager)
+  getVenues:        ()           => call('GET',   '/venues'),
+  getEmployment:    ()           => call('GET',   '/employment'),
+  createEmployment: (data)       => call('POST',  '/employment', data),
+  employmentAction: (id, action) => call('PATCH', `/employment/${id}`, { action }),
+
   // Backpackers (browse list)
   getBackpackers: ()          => call('GET',   '/backpackers'),
 
