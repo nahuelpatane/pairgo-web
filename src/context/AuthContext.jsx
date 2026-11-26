@@ -5,11 +5,13 @@ import { AuthContext } from "./useAuth";
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  // true only when the user was already logged in when the app loaded (cookie session)
+  const [restoredSession, setRestoredSession] = useState(false);
 
   // Restore session from httpOnly cookie on mount
   useEffect(() => {
     api.me()
-      .then(({ user }) => setUser(user))
+      .then(({ user }) => { setUser(user); setRestoredSession(!!user); })
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, []);
@@ -51,7 +53,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, restoredSession, login, signup, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

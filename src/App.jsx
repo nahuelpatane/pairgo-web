@@ -6,10 +6,11 @@ import ManagerProfile from "./pages/ManagerProfile";
 import AdminPanel from "./pages/AdminPanel";
 
 export default function App() {
-  const { user, loading } = useAuth();
-  // null = not chosen yet: authenticated users land on their profile by default
+  const { user, loading, restoredSession } = useAuth();
+  // null = not chosen yet: users returning with a saved session land on their profile.
+  // Fresh logins/signups stay on the landing until their modal sends them on (onSuccess).
   const [chosenView, setView] = useState(null);
-  const view = chosenView ?? (user ? "profile" : "landing");
+  const view = chosenView ?? (restoredSession ? "profile" : "landing");
 
   // Admin panel — independent from user auth
   if (window.location.pathname === "/admin") {

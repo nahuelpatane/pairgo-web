@@ -120,7 +120,8 @@ export default function SignupModal({ onClose, onSuccess, onSwitchToLogin }) {
     setLoading(true);
     const result = await signup({ ...form, role: selectedRole });
     setLoading(false);
-    if (result.success) { setStep(3); }
+    if (result.success) setStep(3);
+    else setError(result.error || "Could not create your account. Please try again.");
   };
 
   const handleGoToProfile = () => { onClose(); onSuccess(); };
